@@ -17,28 +17,28 @@ export async function POST(request) {
   try {
     // Authenticate user
     const userSession = await auth();
-    if (!userSession || !userSession.user) {
-      console.error("User not authenticated");
+    // if (!userSession || !userSession.user) {
+    //   console.error("User not authenticated");
 
-      return NextResponse.json(
-        { error: "User not authenticated. Please log in." },
-        { status: 401 }
-      );
-    }
+    //   return NextResponse.json(
+    //     { error: "User not authenticated. Please log in." },
+    //     { status: 401 }
+    //   );
+    // }
 
-    console.log("User session authenticated:", userSession.user.email);
+    // console.log("User session authenticated:", userSession.user.email);
 
     // Validate pricing plan
-    const selectedPlan = pricingData.find((item) => item.priceId === priceId);
-    if (!selectedPlan) {
-      console.error("Invalid pricing plan selected:", priceId);
-      return NextResponse.json(
-        { error: "Invalid plan selected." },
-        { status: 400 }
-      );
-    }
+    // const selectedPlan = pricingData.find((item) => item.priceId === priceId);
+    // if (!selectedPlan) {
+    //   console.error("Invalid pricing plan selected:", priceId);
+    //   return NextResponse.json(
+    //     { error: "Invalid plan selected." },
+    //     { status: 400 }
+    //   );
+    // }
 
-    console.log("Selected plan is valid:", selectedPlan.planName);
+    // console.log("Selected plan is valid:", selectedPlan.planName);
 
     // Retrieve user and ensure they exist
     const user = await User.findById(userSession.user.id);
