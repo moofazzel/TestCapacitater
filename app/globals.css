@@ -1,0 +1,423 @@
+/* app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+/* custom scroll bar style  */
+    * {
+      --scrollbar-track: #E6F7E5;
+      --scrollbar-thumb: #70D167;
+      --scrollbar-thumb-hover: #006A00;
+      --: 18px;
+      /* Set the scrollbar thickness */
+  
+      scrollbar-width: auto;
+      /* For Firefox */
+      scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+  
+    /* For WebKit browsers (e.g., Chrome, Safari) */
+    *::-webkit-scrollbar {
+      width: var(--scrollbar-width);
+      /* Vertical scrollbar width */
+      height: var(--scrollbar-width);
+      /* Horizontal scrollbar height */
+    }
+  
+    *::-webkit-scrollbar-track {
+      background: var(--scrollbar-track);
+  
+    }
+  
+    *::-webkit-scrollbar-thumb {
+      background-color: var(--scrollbar-thumb);
+  
+      border: 4px solid var(--scrollbar-track);
+      /* Adds padding effect around thumb */
+    }
+  
+    *::-webkit-scrollbar-thumb:hover {
+      background-color: var(--scrollbar-thumb-hover);
+    }
+
+    /* end custom scroll bar style */
+
+.header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+}
+
+.calendar-container {
+  width: 100%;
+  height: 600px;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+.calendar {
+  width: calc(250px * 14);
+  /* 14 months */
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.calendar th,
+.calendar td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+  word-wrap: break-word;
+  position: relative;
+}
+
+.calendar th {
+  background-color: #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  /* Ensure it's above the regular cells */
+}
+
+.calendar th:first-child,
+.calendar td:first-child {
+  background-color: #e0e0e0;
+  font-weight: bold;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  /* Ensure it's above both horizontal and regular cells */
+}
+
+.calendar td {
+  min-width: 250px;
+}
+
+.calendar tfoot th,
+.calendar tfoot td {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  position: sticky;
+  bottom: 0;
+  /* Stick to the bottom */
+  z-index: 2;
+  /* Ensure it's above regular cells */
+}
+
+/* Ensure vertical headers are also sticky */
+.vertical-header {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  padding: 16px;
+  position: sticky;
+  left: 0;
+  top: 0;
+  /* Stick to the top */
+  z-index: 3;
+  /* Ensure it's above both horizontal and regular cells */
+  background-color: #e0e0e0;
+  /* Match the style of first columns */
+}
+
+.sticky-month {
+  position: sticky;
+  bottom: 0;
+  /* Slight adjustment to ensure month headers are above date headers */
+  background-color: #f0f0f0;
+  font-weight: bold;
+  z-index: 3;
+}
+
+.today {
+  position: relative;
+  /* Ensure relative positioning for line positioning */
+}
+
+.today::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--line-position);
+  /* Adjust this based on your requirement */
+  width: 4px;
+  background-color: red;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Add space for each user row */
+.calendar tbody tr {
+  height: 200px;
+  /* Adjust the height as needed */
+}
+
+/* Sticky date headers */
+.calendar tfoot tr:first-child td {
+  position: sticky;
+  bottom: 40px;
+  background-color: #f0f0f0;
+  z-index: 2;
+}
+
+.resources-container {
+  height: 200px;
+  /* Visible height */
+  overflow-y: scroll;
+  /* Always show the vertical scrollbar */
+  border: 2px solid #ccc;
+  position: relative;
+  /* Ensure positioning context for sticky header */
+}
+
+.content {
+  background-color: #ccc;
+  padding-left: 70px;
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 100%;
+  min-height: 200px;
+  padding-top: 21px;
+}
+
+/* ++++++++++++++++++++++++ */
+
+.text-vertical {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}
+/* hide ressources scrollbar  */
+/* Hide scrollbar for Chrome, Safari, and Opera */
+.resources::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge, and Firefox */
+.resources {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.price-box:hover {
+  background-color: #995C23;
+  box-shadow: 0 15px 20px rgba(135, 135, 135, 0.3);
+}
+
+.price-box:hover button {
+  background: #fff !important;
+}
+
+.price-box:hover button p {
+  color: #1E1E1E !important;
+  
+}
+
+.price-box:hover p {
+  color: #fff;
+}
+
+
+.hideScrollBar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.hideScrollBar::-webkit-scrollbar{
+  display: none;
+}
+
+
+
+/* custom shadow */
+.custom-shadow {
+  box-shadow: 0px 4px 15px 0px rgba(0, 0, 0, 0.25)
+}
+
+.drop-shadow {
+  filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25));
+}
+
+
+
+.hideScrollBar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.hideScrollBar::-webkit-scrollbar{
+  display: none;
+}
+
+
+
+/* custom shadow */
+.custom-shadow {
+  box-shadow: 0px 4px 15px 0px rgba(0, 0, 0, 0.25)
+}
+
+.drop-shadow {
+  filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25));
+}
+
+
+.table-header {
+  background-color: #C4EBBF !important;
+  padding-left: 25px !important;
+  padding-right: 25px !important;
+  padding-top: 32px !important;
+  padding-bottom: 32px !important;
+  border-radius: 0 !important;
+  font-weight: medium !important;
+  font-size: 18px !important;
+  color: #373737 !important;
+  border: 1px solid #04BC04 !important;
+  border-right: none !important;
+  border-left: none !important;
+  text-align: center !important;
+  
+}
+
+
+.table-header:first-child {
+  border-left: 1px solid #04BC04 !important;
+
+}
+
+
+.table-header:last-child {
+  border-right: 1px solid #04BC04 !important;
+}
+/* Target the table wrapper specifically */
+.custom-round {
+  /* Ensure overflow is scrollable for the table */
+  overflow-y: auto;
+}
+
+/* WebKit browsers (Chrome, Safari) */
+.custom-round::-webkit-scrollbar {
+  width: 6px;
+  /* Thin scrollbar width */
+  height: 6px;
+  /* For horizontal scrollbar */
+}
+
+.custom-round::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  /* Background of the scrollbar track */
+  border-radius: 3px;
+}
+
+.custom-round::-webkit-scrollbar-thumb {
+  background-color: #C4EBBF;
+  /* Color of the scrollbar thumb */
+  border-radius: 3px;
+  border: 2px solid #f1f1f1;
+  /* Space around the thumb */
+}
+
+.custom-round::-webkit-scrollbar-thumb:hover {
+  background-color: #C4EBBF;
+  /* Darker on hover */
+}
+
+/* Firefox */
+.custom-round {
+  scrollbar-width: thin;
+  /* Makes scrollbar thin in Firefox */
+  scrollbar-color: #C4EBBF #f1f1f1;
+  /* Thumb color and track color */
+  border-collapse: 0 !important;
+    border-radius: 0 !important;
+}
+
+
+
+.table-row {
+  border: 2px solid #B0B0B0;
+}
+.table-row:first-child {
+  border-top: none;
+}
+
+.table-header svg {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+#hireDate+span {
+  color: #686868;
+}
+
+input::placeholder {
+  color: #686868;
+  /* Consistent placeholder color across inputs */
+}
+
+input[type="date"] {
+  position: relative;
+  padding-right: 30px;
+  /* space for the icon */
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  background: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26"%3E%3Cpath d="M22.1 2.6H19.5V1.3C19.5 0.955219 19.363 0.624558 19.1192 0.380761C18.8754 0.136964 18.5448 0 18.2 0C17.8552 0 17.5246 0.136964 17.2808 0.380761C17.037 0.624558 16.9 0.955219 16.9 1.3V2.6H9.1V1.3C9.1 0.955219 8.96304 0.624558 8.71924 0.380761C8.47544 0.136964 8.14478 0 7.8 0C7.45522 0 7.12456 0.136964 6.88076 0.380761C6.63696 0.624558 6.5 0.955219 6.5 1.3V2.6H3.9C2.86566 2.6 1.87368 3.01089 1.14228 3.74228C0.410892 4.47368 0 5.46566 0 6.5V22.1C0 23.1343 0.410892 24.1263 1.14228 24.8577C1.87368 25.5891 2.86566 26 3.9 26H22.1C23.1343 26 24.1263 25.5891 24.8577 24.8577C25.5891 24.1263 26 23.1343 26 22.1V6.5C26 5.46566 25.5891 4.47368 24.8577 3.74228C24.1263 3.01089 23.1343 2.6 22.1 2.6ZM23.4 22.1C23.4 22.4448 23.263 22.7754 23.0192 23.0192C22.7754 23.263 22.4448 23.4 22.1 23.4H3.9C3.55522 23.4 3.22456 23.263 2.98076 23.0192C2.73696 22.7754 2.6 22.4448 2.6 22.1V13H23.4V22.1ZM23.4 10.4H2.6V6.5C2.6 6.15522 2.73696 5.82456 2.98076 5.58076C3.22456 5.33696 3.55522 5.2 3.9 5.2H6.5V6.5C6.5 6.84478 6.63696 7.17544 6.88076 7.41924C7.12456 7.66304 7.45522 7.8 7.8 7.8C8.14478 7.8 8.47544 7.66304 8.71924 7.41924C8.96304 7.17544 9.1 6.84478 9.1 6.5V5.2H16.9V6.5C16.9 6.84478 17.037 7.17544 17.2808 7.41924C17.5246 7.66304 17.8552 7.8 18.2 7.8C18.5448 7.8 18.8754 7.66304 19.1192 7.41924C19.363 7.17544 19.5 6.84478 19.5 6.5V5.2H22.1C22.4448 5.2 22.7754 5.33696 23.0192 5.58076C23.263 5.82456 23.4 6.15522 23.4 6.5V10.4Z" fill="%2304BC04"/%3E%3C/svg%3E') no-repeat center;
+  cursor: pointer;
+  opacity: 1;
+}
+
+/* input[type="date"] {
+  appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+
+ 
+  &::-webkit-inner-spin-button,
+  &::-webkit-calendar-picker-indicator {
+    display: none;
+  }
+} */
+
+
+
+
+
+/* ( Resizable Button ) Style the bottom resize handle */
+.react-resizable-handle-s {
+  background-color: #04bc0425;
+  border : 1px solid #04BC04;
+  height: 3px;
+  width: 100%;
+  /* cursor: s-resize; */
+  position: absolute;
+  bottom: 0;
+  z-index: 999;
+  
+}
+
+
+.deal-hover-shape-path{
+clip-path: polygon(4% 6%, 100% 6%, 100% 99%, 0 100%, 0 0);
+}
+
+/* next ui dropdown multi select icon color */
+.custom-svg-color svg{
+  color: #04BC04;
+}
+
+/* custom clip path for color picker dropdown */
+
+.color-picker-clip-path{
+  clip-path: polygon(94% 6%, 100% 0, 100% 100%, 1% 100%, 0 6%);
+  box-shadow: 0px 5.236px 19.636px 0px rgba(0, 0, 0, 0.25);
+}
