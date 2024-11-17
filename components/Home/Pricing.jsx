@@ -1,11 +1,8 @@
-import { createCheckoutSession } from "@/actions/stripe";
 import { RocknRoll_One } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { pricingData } from "@/PricingData";
-import Swal from "sweetalert2";
 import PriceActionButton from "./PriceActionButton";
 
 const rocknroll = RocknRoll_One({ subsets: ["latin"], weight: "400" });
