@@ -8,6 +8,7 @@ const PriceActionButton = ({ title, priceId }) => {
   const router = useRouter();
 
   const { data: session } = useSession();
+  console.log("🚀 ~ session:", session?.user?.id);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -21,7 +22,7 @@ const PriceActionButton = ({ title, priceId }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ priceId, userId: session?.user?.id }),
       });
       const result = await response.json();
 

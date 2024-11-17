@@ -12,23 +12,25 @@ async function getRawBody(req) {
   return Buffer.concat(chunks);
 }
 
-async function saveSubscriptionData(customerId, subscriptionData) {
-  const user = await User.findOne({ stripeCustomerId: customerId });
+async function saveSubscriptionData(userId, subscriptionData, customerId) {
+  const user = await User.findById(userId);
   if (!user) {
-    console.error(`User with customer ID ${customerId} not found.`);
+    console.error(`User with ID ${userId} not found.`);
     return;
   }
 
   try {
+    // Save or update subscription details
     const subscription = await StripeSubscription.findOneAndUpdate(
       { userId: user._id },
       subscriptionData,
       { upsert: true, new: true }
     );
 
-    // Update user's subscriptionId if not already set
-    if (!user.subscriptionId) {
+    // Update user's subscriptionId and customerId if not already set
+    if (!user.subscriptionId || !user.stripeCustomerId) {
       user.subscriptionId = subscription._id;
+      user.stripeCustomerId = customerId;
       user.isTrialActive = false;
       await user.save();
     }
@@ -56,55 +58,75 @@ export async function POST(req) {
     const customerId = data.customer;
     const subscriptionId = data.id;
 
+    // Extract userId from metadata
+    const userId = data.metadata?.userId;
+
+    if (!userId) {
+      console.error("User ID not found in event metadata.");
+      return new Response("User ID not found in metadata", { status: 400 });
+    }
+
     // Get the plan name from the pricing data based on price ID
     const planName = getPlanNameFromPriceId(data?.lines?.data[0]?.price.id);
 
     switch (event.type) {
       case "customer.subscription.created":
-        await saveSubscriptionData(customerId, {
-          stripeSubscriptionId: subscriptionId,
-          stripeCustomerId: customerId,
-          planId: data.items?.data[0]?.price.id,
-          planName: planName,
-          status: data.status,
-          currentPeriodStart: new Date(data.current_period_start * 1000),
-          currentPeriodEnd: new Date(data.current_period_end * 1000),
-          cancelAtPeriodEnd: data.cancel_at_period_end,
-          canceledAt: data.canceled_at
-            ? new Date(data.canceled_at * 1000)
-            : null,
-          latestInvoiceUrl: data.latest_invoice
-            ? await getInvoiceUrl(data.latest_invoice)
-            : null,
-        });
+        await saveSubscriptionData(
+          userId,
+          {
+            stripeSubscriptionId: subscriptionId,
+            stripeCustomerId: customerId,
+            planId: data.items?.data[0]?.price.id,
+            planName: planName,
+            status: data.status,
+            currentPeriodStart: new Date(data.current_period_start * 1000),
+            currentPeriodEnd: new Date(data.current_period_end * 1000),
+            cancelAtPeriodEnd: data.cancel_at_period_end,
+            canceledAt: data.canceled_at
+              ? new Date(data.canceled_at * 1000)
+              : null,
+            latestInvoiceUrl: data.latest_invoice
+              ? await getInvoiceUrl(data.latest_invoice)
+              : null,
+          },
+          customerId
+        );
         break;
 
       case "customer.subscription.updated":
-        await saveSubscriptionData(customerId, {
-          stripeSubscriptionId: subscriptionId,
-          status: data.status,
-          currentPeriodStart: new Date(data.current_period_start * 1000),
-          currentPeriodEnd: new Date(data.current_period_end * 1000),
-          cancelAtPeriodEnd: data.cancel_at_period_end,
-          canceledAt: data.canceled_at
-            ? new Date(data.canceled_at * 1000)
-            : null,
-          latestInvoiceUrl: data.latest_invoice
-            ? await getInvoiceUrl(data.latest_invoice)
-            : null,
-        });
+        await saveSubscriptionData(
+          userId,
+          {
+            stripeSubscriptionId: subscriptionId,
+            status: data.status,
+            currentPeriodStart: new Date(data.current_period_start * 1000),
+            currentPeriodEnd: new Date(data.current_period_end * 1000),
+            cancelAtPeriodEnd: data.cancel_at_period_end,
+            canceledAt: data.canceled_at
+              ? new Date(data.canceled_at * 1000)
+              : null,
+            latestInvoiceUrl: data.latest_invoice
+              ? await getInvoiceUrl(data.latest_invoice)
+              : null,
+          },
+          customerId
+        );
         break;
 
       case "customer.subscription.deleted":
-        await saveSubscriptionData(customerId, {
-          stripeSubscriptionId: subscriptionId,
-          status: "canceled",
-          canceledAt: new Date(data.canceled_at * 1000),
-          currentPeriodEnd: new Date(data.canceled_at * 1000),
-          latestInvoiceUrl: data.latest_invoice
-            ? await getInvoiceUrl(data.latest_invoice)
-            : null,
-        });
+        await saveSubscriptionData(
+          userId,
+          {
+            stripeSubscriptionId: subscriptionId,
+            status: "canceled",
+            canceledAt: new Date(data.canceled_at * 1000),
+            currentPeriodEnd: new Date(data.canceled_at * 1000),
+            latestInvoiceUrl: data.latest_invoice
+              ? await getInvoiceUrl(data.latest_invoice)
+              : null,
+          },
+          customerId
+        );
         break;
 
       case "invoice.payment_succeeded":
@@ -112,18 +134,22 @@ export async function POST(req) {
           data.billing_reason === "subscription_create" ||
           data.billing_reason === "subscription_cycle"
         ) {
-          await saveSubscriptionData(customerId, {
-            stripeSubscriptionId: data.subscription,
-            stripeCustomerId: customerId,
-            planId: data.lines.data[0].price.id,
-            planName: planName,
-            status: "active",
-            currentPeriodStart: new Date(data.period_start * 1000),
-            currentPeriodEnd: new Date(data.period_end * 1000),
-            latestInvoiceUrl: data.latest_invoice
-              ? await getInvoiceUrl(data.latest_invoice)
-              : null,
-          });
+          await saveSubscriptionData(
+            userId,
+            {
+              stripeSubscriptionId: data.subscription,
+              stripeCustomerId: customerId,
+              planId: data.lines.data[0].price.id,
+              planName: planName,
+              status: "active",
+              currentPeriodStart: new Date(data.period_start * 1000),
+              currentPeriodEnd: new Date(data.period_end * 1000),
+              latestInvoiceUrl: data.latest_invoice
+                ? await getInvoiceUrl(data.latest_invoice)
+                : null,
+            },
+            customerId
+          );
         }
         break;
 
