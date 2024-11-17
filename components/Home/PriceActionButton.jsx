@@ -1,17 +1,27 @@
 "use client";
 
-import { createCheckoutSession } from "@/actions/stripe";
 import Swal from "sweetalert2";
 
 const PriceActionButton = ({ title, priceId }) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const data = new FormData(event.currentTarget);
-
     try {
-      const { url } = await createCheckoutSession(data);
-      window.location.href = url;
+      // Send JSON instead of FormData
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ priceId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create checkout session");
+      }
+
+      const result = await response.json();
+      window.location.href = result.url;
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -20,17 +30,14 @@ const PriceActionButton = ({ title, priceId }) => {
       });
     }
   };
+
   return (
-    <form onSubmit={handleSubmit}>
-      {/* hidden inputs */}
-      <input type="hidden" name="priceId" value={priceId} />
-      <button
-        type="submit"
-        className="px-12 py-3 text-2xl font-semibold text-white mb-[10px] bg-color01"
-      >
-        <p>{title}</p>
-      </button>
-    </form>
+    <button
+      onClick={handleSubmit}
+      className="px-12 py-3 text-2xl font-semibold text-white group-hover:text-black transition-all duration-200 mb-[10px] bg-color01"
+    >
+      {title}
+    </button>
   );
 };
 

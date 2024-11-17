@@ -1,27 +1,34 @@
-"use server";
-
 import { auth } from "@/auth";
 import { stripe } from "@/lib/stripe";
 import { User } from "@/models/user-model";
 import { pricingData } from "@/PricingData";
 import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 
-export async function createCheckoutSession(data) {
+export const dynamic = "force-dynamic";
+
+export async function POST(request) {
   const ui_mode = "hosted";
   const origin = headers().get("origin") || process.env.NEXT_PUBLIC_BASE_URL;
-  const priceId = data.get("priceId");
 
-  console.log("Creating checkout session with data:", {
-    origin,
-    priceId,
-  });
+  const { priceId } = await request.json();
+  console.log("🚀 ~ priceId:", priceId);
 
   try {
+    console.log("Creating checkout session with data:", {
+      origin,
+      priceId,
+    });
+
     // Authenticate user
     const userSession = await auth();
+    console.log("🚀 ~ userSession:", userSession);
     if (!userSession || !userSession.user) {
       console.error("User not authenticated");
-      // throw new Error("Unauthorized access. Please log in.");
+      return NextResponse.json(
+        { error: "Unauthorized access. Please log in." },
+        { status: 401 }
+      );
     }
 
     console.log("User session authenticated:", userSession.user.email);
@@ -30,7 +37,10 @@ export async function createCheckoutSession(data) {
     const selectedPlan = pricingData.find((item) => item.priceId === priceId);
     if (!selectedPlan) {
       console.error("Invalid pricing plan selected:", priceId);
-      throw new Error("Invalid plan selected.");
+      return NextResponse.json(
+        { error: "Invalid plan selected." },
+        { status: 400 }
+      );
     }
 
     console.log("Selected plan is valid:", selectedPlan.planName);
@@ -39,7 +49,7 @@ export async function createCheckoutSession(data) {
     const user = await User.findById(userSession.user.id);
     if (!user) {
       console.error("User not found in database:", userSession.user.id);
-      // throw new Error("User not found.");
+      return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
     console.log("User found in database:", user.email);
@@ -81,13 +91,12 @@ export async function createCheckoutSession(data) {
     });
 
     console.log("Checkout session created:", checkoutSession.url);
-    return {
-      url: checkoutSession.url,
-    };
+    return NextResponse.json({ url: checkoutSession.url }, { status: 200 });
   } catch (error) {
     console.error("Error creating checkout session:", error.message);
-    throw new Error(
-      "Unable to create checkout session. Please try again later."
+    return NextResponse.json(
+      { error: "Unable to create checkout session. Please try again later." },
+      { status: 500 }
     );
   }
 }

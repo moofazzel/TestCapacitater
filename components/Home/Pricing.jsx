@@ -68,7 +68,7 @@ const Pricing = () => {
           ) : (
             <div
               key={plan.index}
-              className={`p-11 md:w-[449px] md:h-[581px] flex items-center justify-center flex-col shadow-dark-gray m-4 price-box group transition-all duration-500 cursor-pointer ${
+              className={`p-11 md:w-[449px] md:h-[581px] flex items-center justify-center flex-col shadow-dark-gray m-4 price-box group transition-all duration-500  ${
                 plan.index % 2 === 0
                   ? "mt-[40px] lg:-mt-[80px]"
                   : "mt-[40px] lg:mt-[150px]"
