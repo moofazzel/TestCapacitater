@@ -1,10 +1,18 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 
 const PriceActionButton = ({ title, priceId }) => {
+  const router = useRouter();
+
+  const { data: session } = useSession();
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (!session) return router.push("/login");
 
     try {
       // Send JSON instead of FormData
@@ -15,14 +23,17 @@ const PriceActionButton = ({ title, priceId }) => {
         },
         body: JSON.stringify({ priceId }),
       });
+      const result = await response.json();
+
+      console.log("🚀 ~ result:", result);
 
       if (!response.ok) {
         throw new Error("Failed to create checkout session");
       }
 
-      const result = await response.json();
       window.location.href = result.url;
     } catch (error) {
+      console.log("🚀 ~ error:", error);
       Swal.fire({
         icon: "error",
         title: "Oops...",

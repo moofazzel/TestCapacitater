@@ -10,21 +10,18 @@ export const dynamic = "force-dynamic";
 export async function POST(request) {
   const ui_mode = "hosted";
   const origin = headers().get("origin") || process.env.NEXT_PUBLIC_BASE_URL;
+  console.log("🚀 ~ origin:", origin);
 
   const { priceId } = await request.json();
 
   try {
-    console.log("Creating checkout session with data:", {
-      origin,
-      priceId,
-    });
-
     // Authenticate user
     const userSession = await auth();
     if (!userSession || !userSession.user) {
       console.error("User not authenticated");
+
       return NextResponse.json(
-        { error: "Unauthorized access. Please log in." },
+        { error: "User not authenticated. Please log in." },
         { status: 401 }
       );
     }
