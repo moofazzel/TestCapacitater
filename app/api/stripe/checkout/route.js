@@ -12,7 +12,6 @@ export async function POST(request) {
   const origin = headers().get("origin") || process.env.NEXT_PUBLIC_BASE_URL;
 
   const { priceId } = await request.json();
-  console.log("🚀 ~ priceId:", priceId);
 
   try {
     console.log("Creating checkout session with data:", {
@@ -22,7 +21,6 @@ export async function POST(request) {
 
     // Authenticate user
     const userSession = await auth();
-    console.log("🚀 ~ userSession:", userSession);
     if (!userSession || !userSession.user) {
       console.error("User not authenticated");
       return NextResponse.json(
@@ -55,6 +53,26 @@ export async function POST(request) {
     console.log("User found in database:", user.email);
 
     let customerId = user.stripeCustomerId;
+
+    // Validate the existing Stripe customer ID
+    if (customerId) {
+      try {
+        // Attempt to retrieve the customer from Stripe
+        const customer = await stripe.customers.retrieve(customerId);
+        console.log("🚀 ~ customer:", customer);
+
+        if (customer.deleted) {
+          console.log(
+            "Customer record is deleted. Creating a new Stripe customer..."
+          );
+          customerId = null; // Reset customerId to trigger new customer creation
+        }
+      } catch (err) {
+        console.error("Error retrieving Stripe customer:", err.message);
+        // If customer retrieval fails, assume it's invalid and create a new one
+        customerId = null;
+      }
+    }
 
     // If user doesn't have a Stripe customer ID, create one
     if (!customerId) {
