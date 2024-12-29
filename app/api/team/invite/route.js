@@ -8,6 +8,8 @@ import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export const POST = async (req) => {
   const { email: invitedEmail, teamId } = await req.json();
 
