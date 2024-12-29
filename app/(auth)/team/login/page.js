@@ -1,11 +1,5 @@
-import TeamMemberLoginForm from "./TeamMemberLoginForm";
-
 const TeamLoginMemberPage = () => {
-  return (
-    <div>
-      <TeamMemberLoginForm />
-    </div>
-  );
+  return <div>{/* <TeamMemberLoginForm /> */} hello</div>;
 };
 
 export default TeamLoginMemberPage;
