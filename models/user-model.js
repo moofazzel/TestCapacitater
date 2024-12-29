@@ -14,12 +14,13 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      default: null,
     },
     stripeCustomerId: {
       type: String,
       default: null,
     },
+
     subscriptionId: {
       type: Types.ObjectId,
       ref: "StripeSubscription", // Reference to the Stripe subscription
@@ -56,6 +57,33 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    google_sheets_permission: {
+      type: Boolean,
+      default: false,
+    },
+    // for accessing google sheet
+    google_tokens: {
+      access_token: {
+        type: String,
+        default: null,
+      },
+      refresh_token: {
+        type: String,
+        default: null,
+      },
+      scope: {
+        type: String,
+        default: null,
+      },
+      token_type: {
+        type: String,
+        default: null,
+      },
+      expiry_date: {
+        type: Number,
+        default: null,
+      },
+    },
     // Trial fields
     trialStartDate: {
       type: Date,
@@ -70,6 +98,10 @@ const userSchema = new mongoose.Schema(
     isTrialActive: {
       type: Boolean,
       default: true,
+    },
+    isTeamMember: {
+      type: Boolean,
+      default: false,
     },
   },
 

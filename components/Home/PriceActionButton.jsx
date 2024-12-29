@@ -8,7 +8,6 @@ const PriceActionButton = ({ title, priceId }) => {
   const router = useRouter();
 
   const { data: session } = useSession();
-  console.log("🚀 ~ session:", session?.user?.id);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -22,11 +21,9 @@ const PriceActionButton = ({ title, priceId }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ priceId, userId: session?.user?.id }),
+        body: JSON.stringify({ priceId }),
       });
       const result = await response.json();
-
-      console.log("🚀 ~ result:", result);
 
       if (!response.ok) {
         throw new Error("Failed to create checkout session");

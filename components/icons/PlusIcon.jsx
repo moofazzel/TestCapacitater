@@ -13,7 +13,7 @@ export const PlusIcon = ({ width, height, ...props }) => (
       height="29.2"
       fill="#E6F7E5"
       stroke="#04BC04"
-      stroke-width="0.8"
+      strokeWidth="0.8"
     />
     <path
       d="M23.727 16.3637H15.8179V24.5455H13.1816V16.3637H5.27246V13.6364H13.1816V5.45459H15.8179V13.6364H23.727V16.3637Z"

@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import dbConnect from "./lib/mongodb";
 import { User } from "./models/user-model";
 
@@ -10,21 +11,16 @@ export const {
   signIn,
   signOut,
 } = NextAuth({
-  // adapter: MongoDBAdapter(mongoClientPromise, {databaseName: process.env.ENVIRONMENT}),
   session: {
     strategy: "jwt",
     useSecureCookies: false,
   },
-  // site: process.env.NEXTAUTH_URL,
-  // secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       credentials: {
         email: {},
         password: {},
       },
-      // secret: process.env.NEXTAUTH_SECRET,
-
       async authorize(credentials) {
         if (credentials === null) return null;
 
@@ -52,18 +48,42 @@ export const {
         }
       },
     }),
+    Google,
   ],
-
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account.provider === "google") {
+        await dbConnect();
+
+        let existingUser = await User.findOne({ email: profile.email });
+
+        if (!existingUser) {
+          // Create a new user with Google profile data
+          existingUser = await User.create({
+            email: profile.email,
+            name: profile.name,
+          });
+        }
+        user.id = existingUser._id.toString();
+        return true;
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
-        token.id = user._id;
+        token.id = user._id || user.id;
+        token.initial_setup_complete = user.initial_setup_complete;
       }
       return token;
     },
     async session({ session, token }) {
       session.user.id = token.id;
+      session.user.initial_setup_complete = token.initial_setup_complete;
       return session;
+    },
+
+    async redirect({ url, baseUrl, session }) {
+      return `${baseUrl}/setup`;
     },
   },
 });

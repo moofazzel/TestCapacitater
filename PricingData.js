@@ -20,13 +20,13 @@ export const pricingData = [
     index: 2,
     title: "Professional",
     priceId: process.env.STRIPE_PROFESSIONAL_PRICE_ID,
-    price: 25,
+    price: 399,
     text: (
       <>
         Team <b>Database</b>
       </>
     ),
-    subText: "Up to 6 users",
+    subText: "Unlimited Users",
     planName: "Professional",
     img: professionalImage,
   },

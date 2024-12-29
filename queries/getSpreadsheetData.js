@@ -14,6 +14,7 @@ export async function getSpreadsheetData() {
 
   // Return the spreadsheetId and sheetNames from the user data
   return {
+    email: foundUser.email,
     spreadsheetId: foundUser.googleSheetId,
     sheetNames: [foundUser.dealsTabName, foundUser.resourcesTabName],
   };

@@ -9,6 +9,11 @@ export async function GET() {
       changefreq: "monthly",
       priority: "0.8",
     },
+    {
+      loc: "https://capacitater.com/privacy-policy",
+      changefreq: "yearly",
+      priority: "0.5",
+    },
   ];
 
   // Generate XML for the sitemap
@@ -30,7 +35,7 @@ export async function GET() {
   // Return the generated sitemap XML as a response
   const response = new NextResponse(sitemap, {
     headers: {
-      "Content-Type": "application/xml", // Set the content type to XML
+      "Content-Type": "application/xml",
     },
   });
 

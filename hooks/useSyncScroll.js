@@ -1,11 +1,13 @@
 import { useEffect, useRef } from "react";
 
 export const useSyncHorizontalScroll = (elementRef1, elementRef2) => {
-  const isSyncingScroll = useRef(false); // Flag to prevent infinite scroll loop
+  const isSyncingScroll = useRef(false);
 
   useEffect(() => {
     const element1 = elementRef1.current;
     const element2 = elementRef2.current;
+
+    if (!element1 || !element2) return;
 
     const handleScroll = (source, target) => {
       if (isSyncingScroll.current) return;
@@ -13,29 +15,22 @@ export const useSyncHorizontalScroll = (elementRef1, elementRef2) => {
       isSyncingScroll.current = true;
       target.scrollLeft = source.scrollLeft;
 
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         isSyncingScroll.current = false;
-      }, 0); // Reset flag after sync
+      });
     };
 
-    const handleElement1Scroll = () => {
-      handleScroll(element1, element2);
-    };
+    const handleElement1Scroll = () => handleScroll(element1, element2);
+    const handleElement2Scroll = () => handleScroll(element2, element1);
 
-    const handleElement2Scroll = () => {
-      handleScroll(element2, element1);
-    };
+    // Attach scroll listeners
+    element1.addEventListener("scroll", handleElement1Scroll);
+    element2.addEventListener("scroll", handleElement2Scroll);
 
-    if (element1 && element2) {
-      element1.addEventListener("scroll", handleElement1Scroll);
-      element2.addEventListener("scroll", handleElement2Scroll);
-    }
-
+    // Cleanup listeners on unmount
     return () => {
-      if (element1 && element2) {
-        element1.removeEventListener("scroll", handleElement1Scroll);
-        element2.removeEventListener("scroll", handleElement2Scroll);
-      }
+      element1.removeEventListener("scroll", handleElement1Scroll);
+      element2.removeEventListener("scroll", handleElement2Scroll);
     };
   }, [elementRef1, elementRef2]);
 };

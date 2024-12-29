@@ -1,4 +1,3 @@
-"use client";
 import { RocknRoll_One } from "next/font/google";
 import Image from "next/image";
 import visualize from "../../public/assets/capacitater.png";
@@ -14,15 +13,18 @@ const Data = () => {
         <div
           className={`mb-3 text-[56px] font-bold text-gray-800 ${rocknroll.className} text-center`}
         >
-          Integrated <span className="text-[#995C23] text-stroke">Data</span>
+          Integrated{" "}
+          <span
+            style={{
+              color: "white",
+              WebkitTextStroke: "5px #04bc04",
+              textShadow: "0px 0px 1px #995c23",
+            }}
+          >
+            Data
+          </span>
         </div>
-        <style jsx>{`
-          .text-stroke {
-            color: white;
-            -webkit-text-stroke: 5px #04bc04;
-            text-shadow: 0px 0px 1px #995c23;
-          }
-        `}</style>
+
         <p className="mb-8 text-lg text-color02">
           No complicated setup. Bring your data down to a Google sheet and
           connect to our app! Still need help? We are happy to help with setup.

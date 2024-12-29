@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import Provider from "@/providers/Provider";
 import { SessionProvider } from "next-auth/react";
+import { Toaster } from "react-hot-toast";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500"] });
 
@@ -27,6 +28,7 @@ export default async function RootLayout({ children }) {
             <Footer />
           </SessionProvider>
         </Provider>
+        <Toaster />
       </body>
     </html>
   );

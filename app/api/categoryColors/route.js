@@ -2,7 +2,6 @@ import { auth } from "@/auth";
 import dbConnect from "@/lib/mongodb";
 import CategoryColor from "@/models/categoryColor-model";
 import { NextResponse } from "next/server";
-
 export const dynamic = "force-dynamic";
 
 export const GET = async (request) => {

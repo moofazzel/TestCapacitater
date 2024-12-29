@@ -17,7 +17,6 @@ const Contact = () => {
   const FORMSPARK_ACTION_URL = "https://submit-form.com/tD31hS7on";
 
   const onSubmit = async (data) => {
-    console.log(data); // Should correctly log form data
     setLoading(true);
 
     try {

@@ -1,36 +1,44 @@
-// googleAuth.js
 import { google } from "googleapis";
+import dbConnect from "@/lib/mongodb";
+import { User } from "@/models/user-model";
 
-export async function googleAuth() {
-  const client_email = process.env.GOOGLE_AUTH_CLIENT_EMAIL;
-  const private_key = process.env.GOOGLE_AUTH_PRIVATE_KEY.replace(/\\n/g, "\n");
-
-  if (!client_email || !private_key) {
-    throw new Error("Google API credentials are missing or misconfigured.");
+export async function googleAuth(email) {
+  if (!email) {
+    throw new Error("Email is required for Google API authentication.");
   }
 
-  try {
-    const client = new google.auth.JWT(client_email, null, private_key, [
-      "https://www.googleapis.com/auth/spreadsheets",
-    ]);
+  // Connect to the database and fetch the user's tokens
+  await dbConnect();
+  const user = await User.findOne({ email });
 
-    // Authorize the client
-    await new Promise((resolve, reject) => {
-      client.authorize((err, tokens) => {
-        if (err) {
-          reject(
-            new Error("Google Sheets API authorization failed: " + err.message)
-          );
-        } else {
-          resolve(tokens);
-        }
-      });
-    });
-
-    // Return the authenticated client
-    return client;
-  } catch (error) {
-    console.error("Google API Authentication Error:", error.message);
-    throw new Error("Failed to authenticate Google Sheets API.");
+  if (!user || !user.google_tokens || !user.google_tokens.access_token) {
+    throw new Error("User's Google tokens are missing or invalid.");
   }
+
+  // Initialize OAuth2 client
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    `${process.env.NEXTAUTH_URL}/api/google/callback`
+  );
+
+  oauth2Client.setCredentials({
+    access_token: user.google_tokens.access_token,
+    refresh_token: user.google_tokens.refresh_token,
+    scope: user.google_tokens.scope,
+    token_type: user.google_tokens.token_type,
+    expiry_date: user.google_tokens.expiry_date,
+  });
+
+  // Automatically refresh tokens if expired
+  oauth2Client.on("tokens", async (tokens) => {
+    if (tokens.refresh_token) {
+      user.google_tokens.refresh_token = tokens.refresh_token;
+    }
+    user.google_tokens.access_token = tokens.access_token;
+    user.google_tokens.expiry_date = tokens.expiry_date;
+    await user.save();
+  });
+
+  return oauth2Client;
 }

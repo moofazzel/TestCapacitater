@@ -1,4 +1,3 @@
-// services/getGoogleSheetData.js
 import { googleAuth } from "@/utils/googleAuth";
 import { google } from "googleapis";
 import { v4 as uuidv4 } from "uuid";
@@ -7,10 +6,10 @@ import { getSpreadsheetData } from "./getSpreadsheetData";
 export async function getGoogleSheetData() {
   try {
     // Fetch spreadsheet info from User in DB
-    const { spreadsheetId, sheetNames } = await getSpreadsheetData();
+    const { email, spreadsheetId, sheetNames } = await getSpreadsheetData();
 
     // Authenticate with Google Sheets API
-    const client = await googleAuth();
+    const client = await googleAuth(email);
     const gsapi = google.sheets({ version: "v4", auth: client });
 
     let deals = [];

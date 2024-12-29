@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 
 import { RocknRoll_One } from "next/font/google";
@@ -14,28 +12,33 @@ const Visualize = () => {
         <div
           className={`mb-3 text-[56px] font-bold text-gray-800 letter-spacing reduced-line-height ${rocknroll.className} text-center hidden md:block`}
         >
-          Easy-To-<span className="text-[#995C23] text-stroke">Visualize</span>{" "}
+          Easy-To-
+          <span
+            style={{
+              color: "white",
+              WebkitTextStroke: "5px #04bc04",
+              textShadow: "0px 0px 1px #995c23",
+            }}
+          >
+            Visualize
+          </span>{" "}
         </div>
         <div
           className={`mb-3 text-[56px] font-bold text-gray-800 letter-spacing reduced-line-height ${rocknroll.className} text-center md:hidden`}
         >
           Easy <br />
           -To- <br />
-          <span className="text-[#995C23] text-stroke">Visualize</span>{" "}
+          <span
+            style={{
+              color: "white",
+              WebkitTextStroke: "5px #04bc04",
+              textShadow: "0px 0px 1px #995c23",
+            }}
+          >
+            Visualize
+          </span>{" "}
         </div>
-        <style jsx>{`
-          .text-stroke {
-            color: white;
-            -webkit-text-stroke: 5px #04bc04; /* Stroke width and color */
-            text-shadow: 0px 0px 1px #995c23; /* Shadow to enhance the outline */
-          }
-          .letter-spacing {
-            letter-spacing: -2px; /* Reduce spacing for all text */
-          }
-          .reduced-line-height {
-            line-height: 1.2;
-          }
-        `}</style>
+
         <p className="text-lg text-center text-color02">
           Our platform helps leaders make important decisions by providing
           easy-to-digest visualizations of resource assignments.

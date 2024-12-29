@@ -68,7 +68,7 @@ const Pricing = () => {
           ) : (
             <div
               key={plan.index}
-              className={`p-11 md:w-[449px] md:h-[581px] flex items-center justify-center flex-col shadow-dark-gray m-4 price-box group transition-all duration-500  ${
+              className={`p-11 md:w-[449px] md:h-[581px] flex items-center justify-center flex-col shadow-dark-gray m-4 price-box group transition-all duration-500 cursor-pointer ${
                 plan.index % 2 === 0
                   ? "mt-[40px] lg:-mt-[80px]"
                   : "mt-[40px] lg:mt-[150px]"
@@ -81,11 +81,18 @@ const Pricing = () => {
                   className="mb-[30px] w-full"
                 />
               </div>
+
               <PriceActionButton title={plan.title} priceId={plan.priceId} />
 
-              <p className="text-3xl font-semibold text-[#995C23] my-2">
-                ${plan?.price}/month
-              </p>
+              {plan.index === 1 ? (
+                <p className="text-3xl font-semibold text-[#995C23] my-2">
+                  ${plan?.price}/month
+                </p>
+              ) : (
+                <p className="text-3xl font-semibold text-[#995C23] my-2">
+                  ${plan?.price}/year
+                </p>
+              )}
               <p className="text-xl font-normal text-[#1E1E1E] text-center">
                 {plan.text}
               </p>

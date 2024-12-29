@@ -8,15 +8,34 @@ export const dynamic = "force-dynamic";
 export async function getGoogleResourcesSheetData() {
   try {
     // Fetch spreadsheet info from User in DB
-    const { spreadsheetId, sheetNames } = await getSpreadsheetData();
+    const { email, spreadsheetId, sheetNames } = await getSpreadsheetData();
+
+    if (!spreadsheetId || !sheetNames || sheetNames.length < 2) {
+      return {
+        status: 400,
+        error: true,
+        message: "Spreadsheet or resources sheet name not found.",
+      };
+    }
 
     // Authenticate with Google Sheets API
-    const client = await googleAuth();
+    const client = await googleAuth(email); // Updated to use email for authentication
     const gsapi = google.sheets({ version: "v4", auth: client });
 
-    // Specify the "resources" sheet name directly
-    const sheetName = sheetNames[1]; // Ensure this matches the sheet name in your Google Sheets
+    // Ensure the second sheet matches "resources"
+    const sheetName = sheetNames.find(
+      (name) => name.toLowerCase() === "resources"
+    );
 
+    if (!sheetName) {
+      return {
+        status: 404,
+        error: true,
+        message: '"Resources" sheet not found in the spreadsheet.',
+      };
+    }
+
+    // Fetch data from the "resources" sheet
     const opt = {
       spreadsheetId,
       range: `${sheetName}`, // Fetch all data in the "resources" sheet
@@ -39,15 +58,13 @@ export async function getGoogleResourcesSheetData() {
     const categoryIndex = headers.indexOf("Category");
 
     // Structure the data to keep only the required fields
-    const resources = rows.slice(1).map((row) => {
-      return {
-        id: uuidv4(), // Adding a unique UUID
-        resource: row[resourceIndex] || "",
-        totalMaxCapacity: row[totalMaxCapacityIndex] || "",
-        dateHired: row[dateHiredIndex] || "",
-        category: row[categoryIndex] || "",
-      };
-    });
+    const resources = rows.slice(1).map((row) => ({
+      id: uuidv4(), // Adding a unique UUID
+      resource: row[resourceIndex] || "",
+      totalMaxCapacity: row[totalMaxCapacityIndex] || "",
+      dateHired: row[dateHiredIndex] || "",
+      category: row[categoryIndex] || "",
+    }));
 
     return { status: 200, data: { resources } };
   } catch (error) {

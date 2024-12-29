@@ -5,6 +5,7 @@ import "../globals.css";
 
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import GoogleAnalytics from "@/GoogleAnalytics";
 import { SessionProvider } from "next-auth/react";
 import Script from "next/script";
 
@@ -27,6 +28,8 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        {/* Add Google Analytics */}
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS} />
         {/* Add Stripe.js to the head of the page */}
         <Script
           strategy="beforeInteractive" // Load the script before React starts

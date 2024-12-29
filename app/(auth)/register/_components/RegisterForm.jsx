@@ -1,5 +1,6 @@
 "use client";
 
+import LoginWithGoogle from "@/components/LoginWithGoogle";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -57,7 +58,7 @@ const RegisterForm = () => {
 
       response.status === 201 && router.push("/login");
     } catch (e) {
-      console.log(e.message);
+      console.error(e.message);
       // TODO: need to show the error in the ui
     }
   };
@@ -66,13 +67,21 @@ const RegisterForm = () => {
     <div className="container max-w-full xl:max-w-[1400px] 2xl:max-w-[1536px]  flex flex-col mt-28 overflow-hidden px-0">
       <div className="flex flex-col mt-12 overflow-hidden shadow-dark-gray md:flex-row mb-36">
         <div className="p-10 md:p-32 md:w-1/2 bg-color10">
-          <Image src={logo} alt="Contact Us" layout="responsive" />
+          <Image
+            src={logo}
+            alt="Capacitater company logo"
+            layout="responsive"
+          />
         </div>
 
         <div className="p-10 md:p-24 bg-color3 md:w-1/2">
           <div className="mb-8 text-center text-white">
             <div className="w-40 mx-auto h-9">
-              <Image src={logo1} alt="capacitater" layout="responsive" />
+              <Image
+                src={logo1}
+                alt="Capacitater company logo"
+                layout="responsive"
+              />
             </div>
 
             <p className="mt-6 text-3xl font-semibold">Create Account</p>
@@ -82,15 +91,21 @@ const RegisterForm = () => {
           </div>
           <form onSubmit={onSubmit}>
             {errorMessage && (
-              <div className="px-4 py-3 text-center text-black bg-red-100 border border-red-500 rounded-lg">
+              <div
+                className="px-4 py-3 text-center text-black bg-red-100 border border-red-500 rounded-lg"
+                aria-live="assertive"
+              >
                 <p className="font-bold">Warning</p>
                 <p>{errorMessage}</p>
               </div>
             )}
 
             <div className="space-y-2 text-lg font-medium">
-              <label className="text-white">Name</label>
+              <label htmlFor="name" className="text-white">
+                Name
+              </label>
               <input
+                id="name"
                 name="name"
                 type="text"
                 placeholder="Name"
@@ -100,8 +115,11 @@ const RegisterForm = () => {
             </div>
 
             <div className="mt-3 space-y-2 text-lg font-medium">
-              <label className="text-white">Email</label>
+              <label htmlFor="email" className="text-white">
+                Email
+              </label>
               <input
+                id="email"
                 name="email"
                 type="email"
                 placeholder="Email"
@@ -110,8 +128,11 @@ const RegisterForm = () => {
               />
             </div>
             <div className="mt-5 space-y-2 text-lg font-medium">
-              <label className="text-white">Password</label>
+              <label htmlFor="password" className="text-white">
+                Password
+              </label>
               <input
+                id="password"
                 name="password"
                 type="password"
                 placeholder="Password"
@@ -125,6 +146,7 @@ const RegisterForm = () => {
                 type="submit"
                 className="flex items-center justify-center w-full px-8 py-4 text-lg font-semibold bg-white text-color3"
                 disabled={isLoading} // Optionally disable the button while loading
+                aria-busy={isLoading}
               >
                 {isLoading ? (
                   <>
@@ -162,6 +184,13 @@ const RegisterForm = () => {
               </Link>
             </p>
           </form>
+          <LoginWithGoogle />
+          <p className="mt-5 text-lg text-center text-white">
+            See{" "}
+            <Link href="/privacy-policy">
+              <span className="underline"> Privacy Policy </span>
+            </Link>{" "}
+          </p>
         </div>
       </div>
     </div>

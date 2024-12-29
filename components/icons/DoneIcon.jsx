@@ -7,9 +7,9 @@ const DoneIcon = ({ onClick }) => {
         stroke="currentColor"
         fill="currentColor"
         strokeWidth="0"
-        viewBox="0 0 24 24"
-        height="1em"
-        width="1em"
+        width="38"
+        height="38"
+        viewBox="0 0 38 38"
         xmlns="http://www.w3.org/2000/svg"
       >
         <path fill="none" d="M0 0h24v24H0z"></path>

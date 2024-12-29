@@ -7,10 +7,10 @@ import { google } from "googleapis";
 export async function deleteResourceFromSheet(resourceName) {
   try {
     // Fetch spreadsheet info from User in DB
-    const { spreadsheetId, sheetNames } = await getSpreadsheetData();
+    const { spreadsheetId, sheetNames, email } = await getSpreadsheetData();
 
     // Authenticate with Google Sheets API
-    const client = await googleAuth();
+    const client = await googleAuth(email);
     const gsapi = google.sheets({ version: "v4", auth: client });
 
     // Specify the "resources" sheet name directly

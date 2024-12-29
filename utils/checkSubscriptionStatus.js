@@ -12,7 +12,7 @@ export const checkSubscriptionStatus = async () => {
   let message = "";
 
   // Check if the trial is active
-  if (user.isTrialActive && user.trialEndDate) {
+  if (user?.isTrialActive && user?.trialEndDate) {
     const trialEndDate = new Date(user.trialEndDate);
 
     // If the current date is after the trial end date, the trial has ended
