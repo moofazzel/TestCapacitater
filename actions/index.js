@@ -3,6 +3,7 @@
 import dbConnect from "@/lib/mongodb";
 
 import { signIn } from "@/auth";
+import CategoryColor from "@/models/categoryColor-model";
 import Team from "@/models/team-model";
 import { User } from "@/models/user-model";
 import { getUserData } from "@/queries/getUser";
@@ -76,7 +77,6 @@ export async function teamMemberRegAndLogin(formData) {
     // Find the member by email
     const team = await Team.findOne({
       "members.email": email,
-      "members.tokenExpiration": { $gte: new Date() }, // Token is not expired
     });
 
     if (!team) {
@@ -94,6 +94,13 @@ export async function teamMemberRegAndLogin(formData) {
 
     // Check if the user already exists
     let user = await User.findOne({ email });
+
+    if (user) {
+      user.password = hashedPassword;
+      user.isTeamMember = true;
+      await user.save();
+    }
+
     if (!user) {
       user = await User.create({
         email,
@@ -104,10 +111,10 @@ export async function teamMemberRegAndLogin(formData) {
     }
 
     // Mark the member as joined in the team
-    member.joined = true;
-    member.token = null; // Clear the token
-    member.tokenExpiration = null; // Clear expiration
-    member.name = name; // Update the name
+    // member.joined = true;
+    // member.token = null; // Clear the token
+    // member.tokenExpiration = null; // Clear expiration
+    // member.name = name; // Update the name
     await team.save();
 
     // Find team owner
@@ -129,6 +136,22 @@ export async function teamMemberRegAndLogin(formData) {
         status: 500,
         message: "Failed to send the notification email.",
       };
+    }
+
+    // Replace team member's category colors with the owner's ---
+    if (user._id.toString() !== team.owner.toString()) {
+      // Retrieve the team owner's category colors
+      const ownerCategoryColors = await CategoryColor.findOne({
+        userId: team.owner,
+      });
+      if (ownerCategoryColors) {
+        // Update or create the team member's category colors with the owner's categories
+        await CategoryColor.findOneAndUpdate(
+          { userId: user._id },
+          { categories: ownerCategoryColors.categories },
+          { upsert: true, new: true }
+        );
+      }
     }
 
     // Log in the user

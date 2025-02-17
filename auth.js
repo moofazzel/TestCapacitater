@@ -6,7 +6,9 @@ import dbConnect from "./lib/mongodb";
 import { User } from "./models/user-model";
 
 import { cookies } from "next/headers";
+import CategoryColor from "./models/categoryColor-model";
 import Team from "./models/team-model";
+import { sendEmail } from "./utils/sendEmailWithSendGrid";
 
 export const {
   handlers: { GET, POST },
@@ -118,8 +120,13 @@ export const {
           }
 
           // Check if the user already exists
-          let user = await User.findOne({ email: profile.email });
-          if (!user) {
+
+          if (existingUser) {
+            existingUser.isTeamMember = true;
+            await existingUser.save();
+          }
+
+          if (!existingUser) {
             user = await User.create({
               email: profile.email,
               name: profile.name,
@@ -129,14 +136,32 @@ export const {
           }
 
           // Mark the member as joined in the team
-          member.joined = true;
-          member.token = null; // Clear the token
-          member.tokenExpiration = null; // Clear expiration
-          member.name = profile.name;
-          await team.save();
+          // member.joined = true;
+          // member.token = null; // Clear the token
+          // member.tokenExpiration = null; // Clear expiration
+          // member.name = profile.name;
+          // await team.save();
 
           // Find team owner and notify them
           const teamOwner = await User.findById(team.owner);
+
+          try {
+            // Retrieve the team owner's category colors
+            const ownerCategoryColors = await CategoryColor.findOne({
+              userId: teamOwner._id,
+            });
+            if (ownerCategoryColors) {
+              // Update or create the team member's category colors with the owner's categories
+              await CategoryColor.findOneAndUpdate(
+                { userId: existingUser._id },
+                { categories: ownerCategoryColors.categories },
+                { upsert: true, new: true }
+              );
+            }
+          } catch (error) {
+            console.log("🚀 ~ error:", error);
+          }
+
           try {
             await sendEmail({
               to: "savvysoftware23@gmail.com",
@@ -194,7 +219,19 @@ export const {
 // 🔹 Function to remove all cookies
 function clearAllCookies() {
   const cookieStore = cookies();
-  ["auth_error", "team_member_login", "invitation_email"].forEach((cookie) => {
-    cookieStore.set(cookie, "", { path: "/", expires: new Date(0) });
+
+  // List of cookies to clear
+  const cookiesToClear = [
+    "auth_error",
+    "team_member_login",
+    "invitation_email",
+  ];
+
+  cookiesToClear.forEach((name) => {
+    // Clear each cookie
+    cookieStore.set(name, "", {
+      path: "/",
+      expires: new Date(0), // Set expiration date to the past (effectively deletes the cookie)
+    });
   });
 }
