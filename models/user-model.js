@@ -92,7 +92,7 @@ const userSchema = new mongoose.Schema(
     trialEndDate: {
       type: Date,
       default: function () {
-        return new Date(Date.now() + 15 * 24 * 60 * 60 * 1000); // 15 days from now
+        return new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // 60 days from now
       },
     },
     isTrialActive: {

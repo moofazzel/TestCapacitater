@@ -1,24 +1,19 @@
 import { auth } from "@/auth";
 import { getUserData } from "@/queries/getUser";
-import UserInfo from "./_components/UserInfo";
+import ProfilePageTabs from "./_components/ProfilePageTabs";
 
 const ProfilePage = async () => {
-  // Fetch environment variables (server-side)
-  const templateLink = process.env.TEMPLATE_LINK;
-  const googleAuthClientEmail = process.env.GOOGLE_AUTH_CLIENT_EMAIL;
   // Get the session
   const session = await auth();
 
-  // Fetch user data asynchronously and wait for the result
-  const user = await getUserData(session?.user?.email);
+  const options = {
+    includeSubscriptionStatus: true,
+  };
 
-  return (
-    <UserInfo
-      user={user}
-      templateLink={templateLink}
-      googleAuthClientEmail={googleAuthClientEmail}
-    />
-  );
+  // Fetch user data asynchronously and wait for the result
+  const user = await getUserData(session?.user?.email, options);
+
+  return <ProfilePageTabs user={user} />;
 };
 
 export default ProfilePage;

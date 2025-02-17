@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/mongodb";
 import Team from "@/models/team-model";
+import { User } from "@/models/user-model";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -31,9 +32,28 @@ export const POST = async (req) => {
       return NextResponse.json({ error: "Member not found." }, { status: 404 });
     }
 
+    const existingUser = await User.findOne({ email: member.email });
+
+    let existingOwnerName = null;
+    let isOwner = false;
+
+    if (existingUser) {
+      const existingOwner = await Team.findOne({
+        owner: existingUser._id,
+      });
+      if (existingOwner) {
+        existingOwnerName = existingUser.name;
+        isOwner = true;
+      }
+    }
+
     return NextResponse.json(
-      member?.email,
-      { message: "You have successfully joined the team." },
+      {
+        email: member.email,
+        isOwner,
+        existingOwnerName,
+        message: "Token verified successfully.",
+      },
       { status: 200 }
     );
   } catch (error) {

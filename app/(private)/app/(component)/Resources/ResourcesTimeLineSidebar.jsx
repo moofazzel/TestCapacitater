@@ -3,84 +3,112 @@
 import backgroundSVG from "@/public/resourceShape.png";
 import { Popover, PopoverContent, PopoverTrigger } from "@nextui-org/react";
 import Image from "next/image";
-import { darken } from "polished";
 
 // Utility function to truncate names
-const truncateName = (name) => {
+const truncateFirstName = (name) => {
+  const acceptableLength = 7;
   const [firstName] = name.split(" ");
-  return name.length > 5 ? `${firstName}...` : name;
+  return {
+    name:
+      firstName?.length > acceptableLength
+        ? `${firstName.slice(0, acceptableLength)}...`
+        : firstName,
+  };
 };
 
 function getCapacityColor(usedCapacity, totalCapacity) {
   if (totalCapacity === 0) {
-    // Edge case: No capacity defined, treat as green
-    return "green";
+    // Edge case: No capacity defined, treat as yellow
+    return "yellow";
   }
 
   // Calculate thresholds
-  const greenThreshold = 0.85 * totalCapacity; // 85% of total capacity
-  const yellowThreshold = totalCapacity; // 100% of total capacity
+  const yellowThreshold = 0.85 * totalCapacity; // 85% of total capacity
+  const greenThreshold = totalCapacity; // 100% of total capacity
 
-  // Determine color
-  if (usedCapacity <= greenThreshold) {
-    return "green"; // Green: < 85%
-  } else if (usedCapacity > greenThreshold && usedCapacity <= yellowThreshold) {
-    return "yellow"; // Yellow: 85–100%
+  // Determine color based on used capacity
+  if (usedCapacity <= yellowThreshold) {
+    return "yellow"; // Yellow: < 85%
+  } else if (usedCapacity > yellowThreshold && usedCapacity <= greenThreshold) {
+    return "green"; // Green: 85–100%
   } else {
     return "red"; // Red: > 100%
   }
 }
 
-const ResourcesTimeLineSidebar = ({ resourcesData, resourcesForDeals }) => {
+const ResourcesTimeLineSidebar = ({
+  resourcesData,
+  resourcesForDeals,
+  isHoveredRow,
+  setIsHoveredRow,
+}) => {
   return (
-    <div className="relative flex flex-col items-stretch w-full gap-16">
+    <div className="relative flex flex-col items-stretch w-full gap-[15px] pt-4">
       {Object.entries(resourcesData).map(
         ([resourceName, resourceData], index) => {
           const resourcesBgColor = getCapacityColor(
             resourcesForDeals[resourceName]?.totalCurrentTaskCapacity || 0,
             resourceData?.totalMaxCapacity || 0
           );
+          const { name: truncatedName } = truncateFirstName(resourceName);
+
           return (
             <div
               key={index}
-              className="relative border border-color5 bg-gray-50"
+              className="flex relative justify-center items-center bg-gray-50 border border-color5"
               style={{
-                height: `${resourceData.deals?.length * 60 || 100}px`,
+                height: `40px`,
               }}
             >
               <Popover placement="right-start" backdrop="opaque">
                 <PopoverTrigger>
                   <button
-                    title={resourceName}
-                    style={{
-                      position: "relative",
-                      width: "100%",
-                      height: "100px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      zIndex: 10,
-                      cursor: "pointer",
-                    }}
+                    className={` ${
+                      isHoveredRow === resourceName ? "bg-color9" : ""
+                    } relative w-full text-center h-full transition-all duration-300 ease-in-out`}
+                    onMouseEnter={() => setIsHoveredRow(resourceName)}
+                    onMouseLeave={() => setIsHoveredRow(null)}
                   >
-                    <div className="flex flex-col items-center">
-                      <div
-                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[-90deg] whitespace-nowrap px-2 py-2 text-sm font-medium text-color02 bg-white"
-                        style={{
-                          transformOrigin: "center center",
-                        }}
-                      >
-                        <p className="text-lg font-medium">
-                          {truncateName(resourceName)}
-                        </p>
-                      </div>
+                    <p title={resourceName} className={`text-xs font-medium`}>
+                      {truncatedName}
+                    </p>
+                    <p
+                      title={resourceData?.category}
+                      className={`font-normal text-[9px]`}
+                    >
+                      {resourceData?.category?.length > 10
+                        ? `${resourceData?.category.slice(0, 10)}...`
+                        : resourceData?.category}
+                    </p>
+
+                    {/* resource capacity */}
+
+                    {/* <span
+                      className="absolute -top-1 right-0 size-3 text-[10px] "
+                      style={{
+                        backgroundColor: resourcesBgColor,
+
+                        color: darken(0.6, resourcesBgColor),
+                      }}
+                    >
+                      {resourcesForDeals[resourceName]
+                        ?.totalCurrentTaskCapacity || 0}
+                    </span> */}
+
+                    {/* <div className="flex flex-col items-center">
                       <div className="absolute -bottom-[27px] left-0 flex w-full">
-                        <div className="w-1/2 text-center text-[12px] bg-white border border-green-500 px-1 py-1">
+                        <div
+                          className="w-1/2 text-center text-[12px] border border-green-500 px-1 py-1"
+                          title={resourceData?.category}
+                        >
                           {resourceData?.category?.slice(0, 3)}
                         </div>
                         <div
-                          title={`Max Capacity ${resourceData?.totalMaxCapacity}%`}
-                          className={`w-1/2 text-center text-[12px] px-1 py-1 text-white`}
+                          title={`${
+                            resourcesForDeals[resourceName]
+                              ?.totalCurrentTaskCapacity || 0
+                          }% capacity tasked at this time`}
+                          className={`px-1 py-1 w-1/2 text-center text-white text-[12px]`}
                           style={{
                             backgroundColor: resourcesBgColor,
 
@@ -91,10 +119,16 @@ const ResourcesTimeLineSidebar = ({ resourcesData, resourcesForDeals }) => {
                             ?.totalCurrentTaskCapacity || 0}
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="p-0 bg-transparent border-none rounded-none">
+                <PopoverContent
+                  className="p-0 bg-transparent rounded-none border-none"
+                  style={{
+                    maxWidth: "300px",
+                    overflow: "hidden",
+                  }}
+                >
                   {() => (
                     <div className="relative">
                       <Image
@@ -103,70 +137,135 @@ const ResourcesTimeLineSidebar = ({ resourcesData, resourcesForDeals }) => {
                         objectFit="cover"
                         className="w-full h-full"
                       />
-                      <div className="absolute top-0 left-0 w-full h-full px-1 overflow-auto pl-[50px] pt-5 ">
-                        <div className="">
-                          <h3 className="text-2xl font-semibold">
-                            {resourceName}
-                          </h3>
-                          <p className="text-lg">{resourceData?.category}</p>
+                      <div className="absolute top-0 left-0 w-full h-full px-1 overflow-auto pl-[35px] pr-[10px] pt-[1px] pb-5">
+                        <div>
+                          <div className="flex sticky top-0 z-10 justify-around items-center bg-white">
+                            <h3 className="pb-2 text-2xl font-semibold border-b-2 border-color5">
+                              {resourceName}
+                            </h3>
+                            <p className="pb-2 text-lg border-b-2 border-color5">
+                              {resourceData?.category}
+                            </p>
+                          </div>
 
                           {resourcesForDeals[resourceName]?.dealDetails ? (
-                            <div className="pt-2 space-y-2 ">
+                            <div className="pt-2 space-y-2">
                               {resourcesForDeals[resourceName].dealDetails.map(
                                 (deal, i) => {
+                                  const findDealCapacity = (
+                                    resources,
+                                    dealId
+                                  ) => {
+                                    if (!resources || resources.length === 0) {
+                                      console.log(
+                                        "No resources found for deal:",
+                                        dealId
+                                      );
+                                      return "N/A";
+                                    }
+
+                                    for (let resource of resources) {
+                                      // Dynamically get all keys for Deal IDs
+                                      const dealKeys = Object.keys(
+                                        resource
+                                      ).filter((key) =>
+                                        key.startsWith("Deal ID")
+                                      );
+
+                                      for (let key of dealKeys) {
+                                        const capacityKey =
+                                          key.replace(
+                                            "Deal ID",
+                                            "Deal Capacity"
+                                          ) + "(%)";
+                                        if (resource[key] === dealId) {
+                                          return resource[capacityKey] || "N/A";
+                                        }
+                                      }
+                                    }
+                                    return "N/A";
+                                  };
+                                  const dealCapacity = findDealCapacity(
+                                    deal.resources,
+                                    deal["Deal ID"]
+                                  );
+                                  function formatDate(dateString) {
+                                    const date = new Date(dateString);
+                                    const options = {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "2-digit",
+                                    };
+                                    return date
+                                      .toLocaleDateString("en-GB", options)
+                                      .replace(",", "");
+                                  }
                                   return (
                                     <>
-                                      <div className="p-3 space-y-1" key={i}>
-                                        <p className="text-medium">
-                                          <span className="font-bold">
-                                            Total Max Capacity
-                                          </span>
-                                          : {resourceData?.totalMaxCapacity}%
-                                        </p>
-                                        <p className="text-medium">
-                                          <span className="font-bold">
-                                            Deal ID:
-                                          </span>
-                                          {"   "}
-                                          {deal["Deal ID"]}
-                                        </p>
-                                        <p className="text-medium">
-                                          <span className="font-bold">
-                                            Project:
-                                          </span>
-                                          {"   "}
-                                          {deal["Project"]}
-                                        </p>
-                                        <p className="text-medium">
-                                          <span className="font-bold">
-                                            Deal Stage:
-                                          </span>
-                                          {"   "}
-                                          {deal["Deal Stage"]}
-                                        </p>
-                                        <p className="text-medium">
-                                          <span className="font-bold">
-                                            Client:
-                                          </span>
-                                          {"   "}
-                                          {deal["Client"]}
-                                        </p>
-                                        <p className="text-medium">
-                                          <span className="font-bold">
-                                            Start Date:
-                                          </span>
-                                          {"   "}
-                                          {deal["Start Date"]}
-                                        </p>
-                                        <p className="text-medium">
-                                          <span className="font-bold">
-                                            End Date:
-                                          </span>
-                                          {"   "}
-                                          {deal["End Date"]}
-                                        </p>
+                                      <div
+                                        className="flex flex-col justify-center items-center space-y-4"
+                                        key={i}
+                                      >
+                                        {/* Project Name */}
+                                        <div className="mt-4 w-full text-center">
+                                          <p className="text-lg font-semibold text-gray-700">
+                                            <span className="text-color5">
+                                              Project:
+                                            </span>
+                                            &nbsp;{deal["Project"]}
+                                          </p>
+                                        </div>
+
+                                        {/* Capacity and Deal Stage */}
+                                        <div className="flex flex-wrap justify-center items-center p-2 space-x-4 w-full bg-gray-50 rounded-md border border-color5">
+                                          <p className="text-sm text-gray-600">
+                                            <span className="font-medium text-color5">
+                                              Capacity Used:
+                                            </span>
+                                            &nbsp;
+                                            {dealCapacity}%
+                                          </p>
+                                          <p className="text-sm text-gray-600">
+                                            <span className="font-medium text-color5">
+                                              Deal Stage:
+                                            </span>
+                                            &nbsp;
+                                            {deal["Deal Stage"]}
+                                          </p>
+                                        </div>
+
+                                        {/* Project Timeline */}
+                                        <div className="p-2 w-full text-center bg-gray-50 rounded-md border border-color5">
+                                          <p className="text-sm text-gray-600">
+                                            <span className="font-medium text-color5">
+                                              Project Timeline:
+                                            </span>
+                                            &nbsp;
+                                            {formatDate(
+                                              deal["Start Date"]
+                                            )} - {formatDate(deal["End Date"])}
+                                          </p>
+                                        </div>
+
+                                        {/* Deal ID and Client */}
+                                        <div className="flex flex-wrap justify-center items-center p-2 space-x-4 w-full bg-gray-50 rounded-md border border-color5">
+                                          <p className="text-sm text-gray-600">
+                                            <span className="font-medium text-color5">
+                                              Deal ID:
+                                            </span>
+                                            &nbsp;
+                                            {deal["Deal ID"]}
+                                          </p>
+                                          <p className="text-sm text-gray-600">
+                                            <span className="font-medium text-color5">
+                                              Client:
+                                            </span>
+                                            &nbsp;
+                                            {deal["Client"]}
+                                          </p>
+                                        </div>
                                       </div>
-                                      <hr className="my-2 border-color5" />
+                                      <div className="py-5 border-b border-color5"></div>
                                     </>
                                   );
                                 }

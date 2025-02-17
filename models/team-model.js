@@ -5,6 +5,7 @@ const teamSchema = new mongoose.Schema({
   members: [
     {
       userId: { type: Types.ObjectId, ref: "User" }, // Reference to user
+      name: { type: String }, // Member name
       email: { type: String, required: true, unique: true }, // Ensure unique email
       token: { type: String, default: null }, // Invitation token
       tokenExpiration: { type: Date, default: null }, // Token expiration

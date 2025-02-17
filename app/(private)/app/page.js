@@ -7,7 +7,10 @@ import { getUserData } from "@/queries/getUser";
 import { checkLegacyUser } from "@/utils/checkLegacyUser";
 import LegacyMigration from "./(component)/LegacyMigration";
 import TimeLineSection from "./(component)/TimeLineSection";
-import { processDealsAndResources, processResourcesOnly } from "./_utils";
+import {
+  processDealsAndResources,
+  processResourcesWithOverlappingPeriods,
+} from "./_utils";
 
 export default async function TimeLinePage() {
   const session = await auth();
@@ -37,14 +40,18 @@ export default async function TimeLinePage() {
     allDealStages,
   } = processDealsAndResources(data?.deals, data?.resources);
 
-  const { resourcesData, totalResourcesLength } = processResourcesOnly(
-    data?.deals,
-    data?.resources
-  );
+  const { resourcesData, totalResourcesLength } =
+    processResourcesWithOverlappingPeriods(data?.deals, data?.resources);
+
+  // const { resourcesData, totalResourcesLength } =
+  //   processResourcesOnly(data?.deals, data?.resources);
+
   const dateAndTime = getCurrentFormattedDateTime();
 
+  // !Info the perfect container size is max-w-[3170px] for full screen
+
   return (
-    <section className="container ">
+    <section className="container">
       <h2 className="mb-2 text-xs font-normal">{`Last Data Sync: ${dateAndTime.date} ${dateAndTime.time}`}</h2>
       <CategoryColorKeyProvider>
         <TimeLineSection

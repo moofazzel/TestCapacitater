@@ -32,6 +32,10 @@ const CommentSchema = new mongoose.Schema(
         },
       },
     ],
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields

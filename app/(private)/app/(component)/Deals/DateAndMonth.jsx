@@ -6,7 +6,7 @@ const DateAndMonth = ({ widthPerWeek }) => {
   const currentYear = currentDate.getFullYear();
 
   // get before 5 months and after 8 months from the current date
-  const monthsRange = getMonthsRange(currentMonth, currentYear, 5, 8);
+  const monthsRange = getMonthsRange(currentMonth, currentYear, 3, 8);
   return (
     <div className="sticky bottom-0 z-30 flex w-max">
       {monthsRange.map(({ month, year }, index) => {

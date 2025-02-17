@@ -10,7 +10,7 @@ export const useScrollToCurrentDate = (containerRef, resourcesRef) => {
     const currentYear = currentDate.getFullYear();
 
     // Get months range (5 months before and 8 months after the current month)
-    const monthsRange = getMonthsRange(currentMonth, currentYear, 5, 8);
+    const monthsRange = getMonthsRange(currentMonth, currentYear, 3, 8);
 
     // Find the index of the current month in monthsRange
     const currentMonthIndex = monthsRange.findIndex(
@@ -36,7 +36,7 @@ export const useScrollToCurrentDate = (containerRef, resourcesRef) => {
     const scrollToX =
       previousMonthsWidth +
       currentMondayIndex * widthPerWeek -
-      window.innerWidth / 2.8 +
+      window.innerWidth / 3.8 +
       widthPerWeek / 2;
 
     // Sync scrolling between the container and resources references

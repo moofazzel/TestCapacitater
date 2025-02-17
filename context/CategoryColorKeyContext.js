@@ -7,7 +7,7 @@ const CategoryColorKeyContext = createContext();
 
 // Create a provider component
 export function CategoryColorKeyProvider({ children }) {
-  const [newCategoryUpdate, setNewCategoryUpdate] = useState([]);
+  const [newCategoryUpdate, setNewCategoryUpdate] = useState(false);
   const [categoryColors, setCategoryColors] = useState([]);
   const [loading, setLoading] = useState(true);
 

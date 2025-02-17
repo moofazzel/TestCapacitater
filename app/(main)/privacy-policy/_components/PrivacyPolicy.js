@@ -40,7 +40,7 @@ const PrivacyPolicy = ({ user }) => {
           Privacy Policy & User Agreement
         </h3>
         <h3 className="text-xl font-bold text-center text-[#995C23] mt-2">
-          Effective Date: 15 December 2025
+          Effective Date: 15 December 2024
         </h3>
         <p className="mt-5 text-lg text-center">
           At CapaciTater, we prioritize your privacy and the security of your
@@ -242,18 +242,6 @@ const PrivacyPolicy = ({ user }) => {
               className="font-semibold underline text-color5"
             >
               hello@savvy.website
-            </a>
-          </li>
-          <li>
-            <strong className="text-[#995C23]">Mailing Address:</strong>
-            <a
-              href="https://www.google.com/maps/search/?api=1&query=6+Rice+Lane,+Ozark,+AL+36360"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold underline text-color5"
-            >
-              {" "}
-              6 Rice Lane, Ozark, AL 36360
             </a>
           </li>
         </ul>

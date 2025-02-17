@@ -212,6 +212,7 @@ export function parseResourceDate(dateString) {
 }
 
 // Process resources data to match with deals and calculate remaining capacity and over capacity status for each resource and deal
+
 export function processResourcesOnly(dealsData, resourcesData) {
   const filteredDealsData = filterDealsData(dealsData); // Filter deals first
   const allResources = {};
@@ -258,22 +259,21 @@ export function processResourcesOnly(dealsData, resourcesData) {
         const dealData = filteredDealsData.find(
           (deal) => deal["Deal ID"] === dealId
         );
-
         // If no matching deal is found, continue
         if (!dealData) {
           console.warn(`No deal found for Deal ID: ${dealId}`);
           continue;
         }
 
-        const startDateValue = dealData ? dealData["Start Date"] : undefined;
-        const endDateValue = dealData ? dealData["End Date"] : undefined;
+        const startDateValue = dealData["Start Date"];
+        const endDateValue = dealData["End Date"];
 
         // Add the deal data to the resource's deals object
         allResources[resourceName].deals[dealIdKey] = {
           dealId,
-          client: dealData.Client, // Adding Client from dealsData
-          project: dealData.Project, // Adding Project from dealsData
-          dealStage: dealData["Deal Stage"], // Adding Deal Stage from dealsData
+          client: dealData.Client,
+          project: dealData.Project,
+          dealStage: dealData["Deal Stage"],
           dealCapacity,
           startDate: startDateValue,
           endDate: endDateValue,
@@ -305,7 +305,8 @@ export function processResourcesOnly(dealsData, resourcesData) {
         allResources[resourceName].availablePeriods.push({
           availableStartDate: lastEndDate,
           availableEndDate: startDate,
-          remainingCapacity: totalMaxCapacity, // Full capacity available
+          remainingCapacity: totalMaxCapacity,
+          usedCapacity: 0,
         });
       }
 
@@ -313,6 +314,7 @@ export function processResourcesOnly(dealsData, resourcesData) {
       allResources[resourceName].workingPeriods.push({
         workingStartDate: startDate,
         workingEndDate: endDate,
+        usedCapacity: dealCapacity,
       });
 
       currentCapacity += dealCapacity;
@@ -325,10 +327,11 @@ export function processResourcesOnly(dealsData, resourcesData) {
           availableEndDate: endDate,
           partial: true,
           remainingCapacity: remainingCapacityDuringDeal,
+          usedCapacity: currentCapacity,
         });
       }
 
-      lastEndDate = endDate; // Update the last end date to the current deal's end date
+      lastEndDate = endDate;
     });
 
     // Mark any remaining available periods after the last deal until the end of the year
@@ -337,7 +340,8 @@ export function processResourcesOnly(dealsData, resourcesData) {
       allResources[resourceName].availablePeriods.push({
         availableStartDate: lastEndDate,
         availableEndDate: timelineEndDate,
-        remainingCapacity: totalMaxCapacity, // Full capacity available
+        remainingCapacity: totalMaxCapacity,
+        usedCapacity: 0,
       });
     }
 
@@ -380,6 +384,7 @@ export function processResourcesOnly(dealsData, resourcesData) {
               overtaskStartDate: currentStartDate,
               overtaskEndDate: currentEndDate,
               overtaskedCapacity: totalCapacity - totalMaxCapacity,
+              usedCapacity: totalCapacity,
             });
           }
         } else {
@@ -389,6 +394,183 @@ export function processResourcesOnly(dealsData, resourcesData) {
     }
   });
 
+  return {
+    resourcesData: allResources,
+    totalResourcesLength: Object.keys(allResources).length,
+  };
+}
+
+export function processResourcesWithOverlappingPeriods(
+  dealsData,
+  resourcesData
+) {
+  const filteredDealsData = filterDealsData(dealsData);
+  const allResources = {};
+
+  // ------------------------------------------------------------
+  // 1. Organize resource data & capture intervals from deals
+  // ------------------------------------------------------------
+  (resourcesData || []).forEach((resourceRow) => {
+    const resourceName = resourceRow?.Resources;
+    if (!resourceName) return;
+
+    // Basic resource info from fixed columns
+    const category = resourceRow?.Category || "";
+    const totalMaxCapacity = parseInt(
+      resourceRow["Total Max Capacity(%)"] || 0,
+      10
+    );
+    const dateHired = resourceRow["Date Hired"] || "";
+
+    // Initialize the resource object if not already present
+    if (!allResources[resourceName]) {
+      allResources[resourceName] = {
+        resourceName,
+        category,
+        totalMaxCapacity,
+        dateHired,
+        // Additional computed fields
+        remainingCapacity: totalMaxCapacity,
+        overCapacity: false,
+        exceededAmount: 0,
+        deals: {},
+        periods: [],
+        // New: capture any dynamic data fields
+        dynamicData: {},
+      };
+    }
+    const resourceObj = allResources[resourceName];
+
+    // ------------------------------------------------------------
+    // 1a. Capture dynamic fields (any key not fixed and not deal-related)
+    // ------------------------------------------------------------
+    Object.keys(resourceRow).forEach((key) => {
+      // Skip fixed keys and keys related to deals
+      if (
+        key === "Resources" ||
+        key === "Category" ||
+        key === "Total Max Capacity(%)" ||
+        key === "Date Hired" ||
+        key.startsWith("Deal ID") ||
+        key.startsWith("Deal Capacity")
+      ) {
+        return;
+      }
+      // Add dynamic field (if any) into resourceObj.dynamicData
+      resourceObj.dynamicData[key] = resourceRow[key];
+    });
+
+    // ------------------------------------------------------------
+    // 2. Collect intervals from each "Deal ID"
+    // ------------------------------------------------------------
+    const projectIntervals = [];
+    Object.keys(resourceRow).forEach((key) => {
+      if (key.startsWith("Deal ID") && resourceRow[key]) {
+        const dealId = resourceRow[key];
+        // Construct the corresponding deal capacity key
+        const dealCapacityKey = key.replace("Deal ID", "Deal Capacity") + "(%)";
+        const dealCapacity = parseInt(resourceRow[dealCapacityKey] || 0, 10);
+
+        // Find the matching deal in the filtered deals data
+        const dealData = filteredDealsData.find(
+          (deal) => deal["Deal ID"] === dealId
+        );
+        if (!dealData) return; // Skip if no matching deal found
+
+        // Parse the start and end dates (assuming parseResourceDate is defined)
+        const startDate = parseResourceDate(dealData["Start Date"]);
+        const endDate = parseResourceDate(dealData["End Date"]);
+
+        // Add interval information for later capacity calculations
+        projectIntervals.push({
+          startDate,
+          endDate,
+          capacity: dealCapacity,
+          dealId,
+        });
+
+        // Store deal info in the resource object's deals property
+        resourceObj.deals[dealId] = {
+          dealId,
+          client: dealData.Client,
+          project: dealData.Project,
+          dealStage: dealData["Deal Stage"],
+          dealCapacity,
+          startDate,
+          endDate,
+        };
+      }
+    });
+
+    // ------------------------------------------------------------
+    // 3. Process time intervals to calculate capacity usage
+    // ------------------------------------------------------------
+    if (projectIntervals.length === 0) {
+      // No intervals; resource remains fully available by default.
+      return;
+    }
+
+    // Build sorted unique boundaries from all intervals
+    const uniqueDateTimes = Array.from(
+      new Set(
+        projectIntervals.flatMap((interval) => [
+          interval.startDate.getTime(),
+          interval.endDate.getTime(),
+        ])
+      )
+    ).sort((a, b) => a - b);
+    const uniqueDates = uniqueDateTimes.map((ts) => new Date(ts));
+
+    // For each consecutive boundary pair, compute capacity usage
+    for (let i = 0; i < uniqueDates.length - 1; i++) {
+      const intervalStart = uniqueDates[i];
+      const intervalEnd = uniqueDates[i + 1];
+
+      // Find intervals that cover the subinterval fully
+      const activeIntervals = projectIntervals.filter(
+        (interval) =>
+          interval.startDate <= intervalStart && interval.endDate >= intervalEnd
+      );
+      const totalUsedCapacity = activeIntervals.reduce(
+        (sum, iv) => sum + iv.capacity,
+        0
+      );
+      const remainingCapacity = Math.max(
+        0,
+        totalMaxCapacity - totalUsedCapacity
+      );
+      const overtaskedCapacity = Math.max(
+        0,
+        totalUsedCapacity - totalMaxCapacity
+      );
+
+      resourceObj.periods.push({
+        startDate: intervalStart,
+        endDate: intervalEnd,
+        usedCapacity: totalUsedCapacity,
+        remainingCapacity,
+        overtaskedCapacity,
+        isOvertasked: overtaskedCapacity > 0,
+        type:
+          overtaskedCapacity > 0
+            ? "overtask"
+            : totalUsedCapacity > 0
+            ? "working"
+            : "available",
+      });
+    }
+
+    // ------------------------------------------------------------
+    // 4. Determine overall over-capacity status
+    // ------------------------------------------------------------
+    resourceObj.overCapacity = resourceObj.periods.some((p) => p.isOvertasked);
+    resourceObj.exceededAmount = resourceObj.periods.reduce(
+      (sum, p) => sum + (p.isOvertasked ? p.overtaskedCapacity : 0),
+      0
+    );
+  });
+
+  // Return the processed resources data and the total count
   return {
     resourcesData: allResources,
     totalResourcesLength: Object.keys(allResources).length,

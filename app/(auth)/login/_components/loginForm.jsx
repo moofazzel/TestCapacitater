@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import logo from "../../../../public/assets/contact.png";
-import logo1 from "../../../../public/assets/logo2.png";
 
 const LoginForm = () => {
   const router = useRouter();
@@ -51,11 +50,7 @@ const LoginForm = () => {
 
         <div className="p-10 md:p-24 bg-color3 md:w-1/2">
           <div className="mb-8 text-center text-white">
-            <div className="w-40 mx-auto h-9">
-              <Image src={logo1} alt="capacitater" layout="responsive" />
-            </div>
-
-            <p className="mt-6 text-3xl font-semibold">Sign In</p>
+            <p className="mt-6 text-3xl font-semibold">Login In</p>
             <p className="mt-2 text-lg">
               See your growth and get consulting support!
             </p>

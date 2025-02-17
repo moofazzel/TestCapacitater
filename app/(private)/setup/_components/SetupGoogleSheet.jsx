@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
+import GrandPermissionModal from "./GrandPermissionModal";
+import JoinATeamModal from "./JoinATeamModal";
 
 export default function SetupGoogleSheet({ userData }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,11 +17,11 @@ export default function SetupGoogleSheet({ userData }) {
 
   const email = session?.user?.email;
 
-  const handleGrantPermission = async () => {
-    const response = await fetch("/api/google/consent", { method: "GET" });
-    const { url } = await response.json();
-    window.location.href = url; // Redirect to Google OAuth consent page
-  };
+  // const handleGrantPermission = async () => {
+  //   const response = await fetch("/api/google/consent", { method: "GET" });
+  //   const { url } = await response.json();
+  //   window.location.href = url; // Redirect to Google OAuth consent page
+  // };
 
   const handleSkip = async () => {
     router.push("/app");
@@ -125,33 +127,29 @@ export default function SetupGoogleSheet({ userData }) {
             <h1 className="text-2xl font-extrabold text-gray-800 sm:text-3xl">
               Set Up Your Account
             </h1>
-            <p className="mt-4 text-gray-600">
+            {/* <p className="mt-4 text-gray-600">
               Please grant access to Google Sheets to continue.
             </p>
             <p className="mt-3 text-gray-600">
               You&apos;ll be redirected to Google to authorize your account.
               Select the account you want to connect with the app.
-            </p>
+            </p> */}
             <div className="flex flex-col gap-3 mt-6 sm:gap-5 sm:flex-row">
-              <Button
-                color="primary"
-                className="px-6 py-2 text-white bg-blue-600 rounded-none hover:bg-blue-700 focus:ring-2 focus:ring-blue-400"
-                onClick={handleGrantPermission}
+              <GrandPermissionModal />
+
+              {/* <Button
+                className="px-6 py-2 text-gray-600 rounded-none border border-gray-400 hover:bg-gray-100"
+                // onClick={handleSkip}
               >
-                Grant Permission
-              </Button>
-              <Button
-                className="px-6 py-2 text-gray-600 border border-gray-400 rounded-none hover:bg-gray-100"
-                onClick={handleSkip}
-              >
-                Skip for Now
-              </Button>
+                Join a Team
+              </Button> */}
+              <JoinATeamModal />
             </div>
           </div>
         )}
       </div>
     </section>
-    // <section className="container ">
+    // <section className="container">
     //   <div className="flex h-[80vh] sm:h-[55vh] flex-col items-center justify-center text-center my-16 md:my-28 bg-gray-50 custom-shadow p-6">
     //     {userData?.googleSheetPermission && userData?.initialSetupComplete && (
     //       <div className="flex flex-col items-center">
@@ -159,13 +157,13 @@ export default function SetupGoogleSheet({ userData }) {
     //           Account Setup Complete
     //         </h1>
 
-    //         <div className="flex flex-col gap-3 mt-6 sm:gap-5 sm:flex-row ">
+    //         <div className="flex flex-col gap-3 mt-6 sm:gap-5 sm:flex-row">
     //           <Button
     //             color="success"
     //             as={Link}
     //             href={googleSheetId}
     //             target="_blank"
-    //             className="px-6 py-2 text-white rounded-none "
+    //             className="px-6 py-2 text-white rounded-none"
     //           >
     //             Open Google Sheet
     //           </Button>
@@ -200,7 +198,7 @@ export default function SetupGoogleSheet({ userData }) {
     //           Please create Google Sheets to continue.
     //         </p>
 
-    //         <div className="flex flex-col gap-3 mt-6 sm:gap-5 sm:flex-row ">
+    //         <div className="flex flex-col gap-3 mt-6 sm:gap-5 sm:flex-row">
     //           <Button
     //             isLoading={isLoading}
     //             color="primary"
@@ -225,7 +223,7 @@ export default function SetupGoogleSheet({ userData }) {
     //           You&apos;ll be redirected to Google to authorize your account.
     //           Select the account you want to connect with the app.
     //         </p>
-    //         <div className="flex flex-col gap-3 mt-6 sm:gap-5 sm:flex-row ">
+    //         <div className="flex flex-col gap-3 mt-6 sm:gap-5 sm:flex-row">
     //           <Button
     //             color="primary"
     //             className="px-6 py-2 text-white bg-blue-600 rounded-none hover:bg-blue-700 focus:ring-2 focus:ring-blue-400"
@@ -234,7 +232,7 @@ export default function SetupGoogleSheet({ userData }) {
     //             Grant Permission
     //           </Button>
     //           <Button
-    //             className="px-6 py-2 text-gray-600 border border-gray-400 rounded-none hover:bg-gray-100"
+    //             className="px-6 py-2 text-gray-600 rounded-none border border-gray-400 hover:bg-gray-100"
     //             onClick={handleSkip}
     //           >
     //             Skip for Now

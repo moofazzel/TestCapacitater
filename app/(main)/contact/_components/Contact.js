@@ -42,7 +42,7 @@ const Contact = () => {
   };
 
   return (
-    <div className="container max-w-full xl:max-w-[1400px] 2xl:max-w-[1536px]  flex flex-col mt-28 overflow-hidden px-0">
+    <div className="container max-w-full xl:max-w-[1400px] 2xl:max-w-[1536px]  flex flex-col mt-24 overflow-hidden px-0">
       <div className="hidden max-w-2xl mx-auto text-center md:block">
         <div
           className={`mb-3 text-[56px] font-bold text-gray-800 letter-spacing reduced-line-height ${rocknroll.className}`}

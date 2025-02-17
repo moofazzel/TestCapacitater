@@ -24,6 +24,21 @@ export const POST = async (req) => {
     const owner = await User.findOne({ email: ownerEmail }).populate(
       "subscriptionId"
     );
+
+    const alreadyAOwner = owner?.email === invitedEmail;
+
+    // If already a owner and want to join the same team then prevent it
+
+    if (alreadyAOwner) {
+      return NextResponse.json(
+        {
+          error:
+            "You are already the owner of this team. You cannot join your own team as a member.",
+        },
+        { status: 400 }
+      );
+    }
+
     if (!owner) {
       return NextResponse.json(
         { error: "Team owner not found." },

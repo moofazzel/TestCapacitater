@@ -5,7 +5,7 @@ const rocknroll = RocknRoll_One({ subsets: ["latin"], weight: "400" });
 
 const TopSection = () => {
   return (
-    <section className="container max-w-full xl:max-w-[1400px] 2xl:max-w-[1536px] flex flex-col items-center justify-center gap-10 py-14 md:py-28 md:flex-row lg:gap-20 md:px-0">
+    <section className="container max-w-full xl:max-w-[1400px] 2xl:max-w-[1536px] flex flex-col items-center justify-center gap-10 py-12 md:py-[100px] md:flex-row lg:gap-20 md:px-0">
       <div className="flex-1 text-center md:text-left">
         <div
           className={`mb-3 text-[64px] font-bold text-gray-800 letter-spacing reduced-line-height ${rocknroll.className} `}
@@ -45,7 +45,7 @@ const TopSection = () => {
           <iframe
             width="555"
             height="518"
-            src="https://www.youtube.com/embed/7D_pcHZWgc8?si=uAWb28CcH1OZKUe7"
+            src="https://www.youtube.com/embed/P362uZsJnjA?si=0k4gU8IlZGQQXZsS"
             title="YouTube video player"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -56,7 +56,7 @@ const TopSection = () => {
           <iframe
             width="350"
             height="320"
-            src="https://www.youtube.com/embed/7D_pcHZWgc8?si=uAWb28CcH1OZKUe7"
+            src="https://www.youtube.com/embed/P362uZsJnjA?si=0k4gU8IlZGQQXZsS"
             title="YouTube video player"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

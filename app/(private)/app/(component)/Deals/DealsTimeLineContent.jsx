@@ -24,7 +24,7 @@ const DealsTimeLineContent = ({
         <div className="sticky left-0 border-2 border-dashed w-fullf h-fullf bg-red-400f border-color5"></div>
       </div> */}
 
-      <div style={{ height: `${totalOwnerHeight}px` }} className="flex w-max ">
+      <div style={{ height: `${totalOwnerHeight}px` }} className="flex w-max">
         {/* timeline grid line */}
         <TimelineGridLine
           widthPerWeek={widthPerWeek}

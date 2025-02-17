@@ -27,7 +27,7 @@ const AllDealItems = ({ dataByDealOwners, dealHeight, allResources }) => {
   const { categoryColors = [] } = useCategoryColorKey();
 
   // get before 5 months and after 8 months from the current date
-  const monthsRange = getMonthsRange(currentMonth, currentYear, 5, 8);
+  const monthsRange = getMonthsRange(currentMonth, currentYear, 3, 8);
 
   const parseResourceDate = (dateString) => {
     if (!dateString) return new Date();
@@ -58,6 +58,8 @@ const AllDealItems = ({ dataByDealOwners, dealHeight, allResources }) => {
   ) => {
     const startDate = parseResourceDate(startDateString);
     const endDate = parseResourceDate(endDateString);
+
+    // Get the timeline's start and end dates
     const firstTimelineDate = new Date(
       monthsRange[0].year,
       monthsRange[0].month,
@@ -69,6 +71,15 @@ const AllDealItems = ({ dataByDealOwners, dealHeight, allResources }) => {
       0
     );
 
+    // Align the firstTimelineDate to the nearest previous Monday
+    const timelineStartDay = firstTimelineDate.getDay();
+    if (timelineStartDay !== 1) {
+      firstTimelineDate.setDate(
+        firstTimelineDate.getDate() - ((timelineStartDay + 6) % 7)
+      );
+    }
+
+    // Ensure dates are within the timeline range
     let adjustedStartDate = startDate;
     let adjustedEndDate = endDate;
 
@@ -81,48 +92,22 @@ const AllDealItems = ({ dataByDealOwners, dealHeight, allResources }) => {
       adjustedEndDate = endDate > lastTimelineDate ? lastTimelineDate : endDate;
     }
 
-    const startMonthIndex = monthsRange.findIndex(
-      ({ month, year }) =>
-        month === adjustedStartDate.getMonth() &&
-        year === adjustedStartDate.getFullYear()
+    // Calculate the number of days from the start of the timeline
+    const daysFromTimelineStart = Math.floor(
+      (adjustedStartDate - firstTimelineDate) / (1000 * 60 * 60 * 24)
     );
 
-    const endMonthIndex = monthsRange.findIndex(
-      ({ month, year }) =>
-        month === adjustedEndDate.getMonth() &&
-        year === adjustedEndDate.getFullYear()
+    const daysEndFromTimelineStart = Math.floor(
+      (adjustedEndDate - firstTimelineDate) / (1000 * 60 * 60 * 24)
     );
 
-    if (startMonthIndex === -1 || endMonthIndex === -1) {
-      return { startX: 0, width: 0 };
-    }
+    // Calculate X positions based on day offsets
+    const startX = daysFromTimelineStart * widthPerDay;
+    const width =
+      (daysEndFromTimelineStart - daysFromTimelineStart + 1) * widthPerDay;
 
-    const startDayPosition =
-      monthsRange
-        .slice(0, startMonthIndex)
-        .reduce(
-          (acc, { month, year }) =>
-            acc + new Date(year, month + 1, 0).getDate(),
-          0
-        ) +
-      adjustedStartDate.getDate() -
-      1;
-
-    const endDayPosition =
-      monthsRange
-        .slice(0, endMonthIndex)
-        .reduce(
-          (acc, { month, year }) =>
-            acc + new Date(year, month + 1, 0).getDate(),
-          0
-        ) +
-      adjustedEndDate.getDate() -
-      1;
-
-    const startX = startDayPosition * widthPerDay;
-    const width = (endDayPosition - startDayPosition + 1) * widthPerDay;
-
-    return { startX, width };
+    // Force the startX to start from 50px(1 Week) to the left for adjust to the timeline grid view
+    return { startX: startX - 50, width };
   };
 
   const truncateText = (text, width, font) => {
@@ -304,11 +289,19 @@ const AllDealItems = ({ dataByDealOwners, dealHeight, allResources }) => {
                 {/* Deals resources */}
                 <div className="flex items-center w-full gap-1">
                   {resourcesToShow.map((resource, resourceIndex) => {
+                    function getDealCountForResource(resource) {
+                      return Object.keys(resource).filter((key) => {
+                        return key.startsWith("Deal ID ") && resource[key];
+                      }).length;
+                    }
+
+                    const dealCount = getDealCountForResource(resource);
+
                     // Find the correct deal capacity for this resource
                     const dealId = deal["Deal ID"];
                     let dealCapacity = null;
                     // Loop through each deal ID and capacity field in the resource data
-                    for (let i = 1; i <= 4; i++) {
+                    for (let i = 1; i <= dealCount; i++) {
                       // Assuming you have up to 4 deals per resource
                       if (resource[`Deal ID ${i}`] === dealId) {
                         dealCapacity = resource[`Deal Capacity ${i}(%)`];

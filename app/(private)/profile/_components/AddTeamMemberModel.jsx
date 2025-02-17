@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import TeamMembers from "./TeamMembers";
 
-export default function AddTeamMemberModel({ isOpen, onOpenChange }) {
+export default function AddTeamMemberModel({ isOpen, onOpenChange, user }) {
   const [email, setEmail] = useState(""); // Email input value
   const [hasTyped, setHasTyped] = useState(false); // Tracks if the user has started typing
 
@@ -91,50 +91,54 @@ export default function AddTeamMemberModel({ isOpen, onOpenChange }) {
         <ModalContent>
           {(onClose) => (
             <>
+              {/* if user is team member then show team members */}
               <ModalHeader className="flex flex-col gap-1">
-                Invite Team Member
+                {!user?.isTeamMember ? "Invite Team Members" : "Team Members"}
               </ModalHeader>
               <ModalBody>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleInvite();
-                  }}
-                  className="flex items-center w-full gap-4"
-                >
-                  {/* Email Input with Dropdown Inside */}
-                  <Input
-                    type="email"
-                    label="Email"
-                    radius="none"
-                    value={email}
-                    onChange={handleInputChange}
-                    className="flex-grow"
-                    errorMessage={
-                      hasTyped && !isValidEmail(email)
-                        ? "Please enter a valid email"
-                        : ""
-                    }
-                    isInvalid={hasTyped && !isValidEmail(email)} // Show error only after typing starts
-                  />
-
-                  {/* Invite Button */}
-                  <Button
-                    onPress={handleInvite}
-                    radius="none"
-                    size="lg"
-                    type="submit"
-                    isLoading={loading}
-                    className={` ${
-                      hasTyped && !isValidEmail(email) ? "mb-[22px]" : "mb-0"
-                    } p-7`}
+                {!user?.isTeamMember && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleInvite();
+                    }}
+                    className="flex items-center w-full gap-4 mb-4"
                   >
-                    {loading ? "Inviting..." : "Send Invite"}
-                  </Button>
-                </form>
+                    {/* Email Input with Dropdown Inside */}
+                    <Input
+                      type="email"
+                      label="Email"
+                      radius="none"
+                      value={email}
+                      onChange={handleInputChange}
+                      className="flex-grow"
+                      errorMessage={
+                        hasTyped && !isValidEmail(email)
+                          ? "Please enter a valid email"
+                          : ""
+                      }
+                      isInvalid={hasTyped && !isValidEmail(email)} // Show error only after typing starts
+                    />
+
+                    {/* Invite Button */}
+                    <Button
+                      onPress={handleInvite}
+                      radius="none"
+                      size="lg"
+                      type="submit"
+                      isLoading={loading}
+                      className={` ${
+                        hasTyped && !isValidEmail(email) ? "mb-[22px]" : "mb-0"
+                      } p-7`}
+                    >
+                      {loading ? "Inviting..." : "Send Invite"}
+                    </Button>
+                  </form>
+                )}
                 <TeamMembers
                   teamMembers={teamMembers}
                   setTeamMembers={setTeamMembers}
+                  user={user}
                 />
               </ModalBody>
               <ModalFooter></ModalFooter>

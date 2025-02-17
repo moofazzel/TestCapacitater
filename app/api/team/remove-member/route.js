@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import dbConnect from "@/lib/mongodb";
 import Team from "@/models/team-model";
+import { User } from "@/models/user-model";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
@@ -34,6 +35,13 @@ export const POST = async (req) => {
         { status: 404 }
       );
     }
+
+    // find the user and remove the team member flag
+    await User.findOneAndUpdate(
+      { email: memberEmail },
+      { $set: { isTeamMember: false } },
+      { new: true }
+    );
 
     revalidatePath("/profile"); // Revalidate the profile page
 

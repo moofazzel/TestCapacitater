@@ -4,9 +4,15 @@ function CustomSearchInput({
   onClear,
   placeholder,
   startContent,
+  customHeight,
 }) {
   return (
-    <div className="relative flex-2 flex items-center w-full px-[17px] border shadow-sm  custom-shadow sm:min-w-fit border-color5 text-color03 h-[60px]">
+    <div
+      className={`relative flex-2 flex items-center w-full px-[17px] border shadow-sm  custom-shadow sm:min-w-fit border-color5 text-color03 ${
+        customHeight ? customHeight : "h-[60px]"
+      }
+      }`}
+    >
       {startContent && <div className="mr-2">{startContent}</div>}
       <input
         type="text"

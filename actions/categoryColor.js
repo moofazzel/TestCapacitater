@@ -9,13 +9,12 @@ import { revalidatePath } from "next/cache";
 export async function addOrUpdateCategoryColor(
   categoryName,
   color,
-  categoryId
+  categoryId = null
 ) {
   try {
     await dbConnect();
 
     const { user } = await auth();
-
     if (!user || !user.email) {
       return {
         success: false,
@@ -24,7 +23,7 @@ export async function addOrUpdateCategoryColor(
       };
     }
 
-    // Check if a CategoryColor document exists for this user
+    // Check if the user has a CategoryColor document
     let userCategoryColors = await CategoryColor.findOne({ userId: user.id });
 
     if (!userCategoryColors) {
@@ -40,17 +39,22 @@ export async function addOrUpdateCategoryColor(
         ],
       });
     } else {
-      // Find the category by ID
-      // Check if categoryId is provided and find the category by ID
-      const category = categoryId
-        ? userCategoryColors.categories.find(
-            (cat) => cat._id.toString() === categoryId.toString()
-          )
-        : null;
+      let category = null;
+
+      // If categoryId is provided, find the category by ID
+      if (categoryId) {
+        category = userCategoryColors.categories.find(
+          (cat) => cat._id.toString() === categoryId.toString()
+        );
+      } else {
+        // If categoryId is not provided, find by name (case-insensitive)
+        category = userCategoryColors.categories.find(
+          (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
+        );
+      }
 
       if (category) {
         // Update the existing category color
-        category.name = categoryName;
         category.bgColor = color;
       } else {
         // Add the new category if it doesn’t exist
@@ -70,7 +74,9 @@ export async function addOrUpdateCategoryColor(
     return {
       success: true,
       status: 200,
-      message: "Category color updated successfully",
+      message: categoryId
+        ? "Category color updated successfully"
+        : "Category color added successfully",
     };
   } catch (error) {
     console.error("Error updating category color:", error);

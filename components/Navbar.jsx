@@ -21,7 +21,7 @@ const Navbar = () => {
 
   return (
     <nav className="w-full bg-[#995C23] mb-8">
-      <div className="container max-w-full xl:max-w-[1400px] 2xl:max-w-[1536px] flex items-center justify-between md:px-0 py-2 mx-auto mt-12 ">
+      <div className="container max-w-full xl:max-w-[1400px] 2xl:max-w-[1536px] flex items-center justify-between md:px-0 py-2 mx-auto mt-6 ">
         {/* Logo Section */}
 
         <div className="flex items-center">
@@ -112,7 +112,7 @@ const Navbar = () => {
                 Contact
               </Link>
               <Link
-                href="/register"
+                href="/signup"
                 className="px-8 py-4 text-lg font-medium text-[#281912] bg-white"
               >
                 Sign Up
@@ -156,9 +156,9 @@ const Navbar = () => {
                       Home
                     </Link>
                   </DropdownItem>
-                  <DropdownItem key="Calendar">
-                    <Link href="/calendar" className="block w-full">
-                      Calendar
+                  <DropdownItem key="App">
+                    <Link href="/app" className="block w-full">
+                      App
                     </Link>
                   </DropdownItem>
                   <DropdownItem key="Resources">
@@ -220,7 +220,7 @@ const Navbar = () => {
                   </Link>
                 </DropdownItem>
                 <DropdownItem key="SignUp">
-                  <Link href="/register" className="block w-full">
+                  <Link href="/signup" className="block w-full">
                     Sign Up
                   </Link>
                 </DropdownItem>

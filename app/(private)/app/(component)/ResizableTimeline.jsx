@@ -1,11 +1,11 @@
 import { ResizableBox } from "react-resizable";
 import "react-resizable/css/styles.css";
 
-const ResizableTimeline = ({ children }) => {
+const ResizableTimeline = ({ children, height = 300 }) => {
   return (
     <ResizableBox
       width={Infinity} // Full width, allowing only vertical resizing
-      height={300} // Default height
+      height={height} // Default height
       minConstraints={[Infinity, 150]} // Min height, no width constraint
       maxConstraints={[Infinity, 800]} // Max height, no width constraint
       resizeHandles={["s"]} // Bottom handle for vertical resizing

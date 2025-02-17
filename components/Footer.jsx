@@ -69,7 +69,7 @@ const Footer = () => {
                   Contact
                 </Link>
                 <Link
-                  href="/register"
+                  href="/signup"
                   className="text-lg font-medium text-white hover:underline"
                 >
                   Sign Up

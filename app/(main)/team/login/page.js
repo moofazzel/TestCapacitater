@@ -1,9 +1,10 @@
 import { Suspense } from "react";
 import TeamMemberLoginForm from "./TeamMemberLoginForm";
+import TeamMemberLoginSkeleton from "./TeamMemberLoginFormSkeleton";
 
 const TeamLoginMemberPage = () => {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<TeamMemberLoginSkeleton />}>
       <TeamMemberLoginForm />
     </Suspense>
   );

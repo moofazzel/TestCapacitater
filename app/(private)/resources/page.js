@@ -10,8 +10,6 @@ export default async function ResourcesPage() {
     return errorComponent;
   }
 
-  // console.log("🚀 ~ data:", data?.resources);
-
   return (
     <section className="container py-10 max-w-full xl:max-w-[1400px] 2xl:max-w-[1536px]">
       {/* <div className="text-xl font-bold text-center">

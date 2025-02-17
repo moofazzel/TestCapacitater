@@ -6,6 +6,7 @@ import { signIn } from "@/auth";
 import Team from "@/models/team-model";
 import { User } from "@/models/user-model";
 import { getUserData } from "@/queries/getUser";
+import { sendEmail } from "@/utils/sendEmailWithSendGrid";
 import bcrypt from "bcryptjs";
 
 export async function credentialLogin(formData) {
@@ -14,8 +15,29 @@ export async function credentialLogin(formData) {
   try {
     const user = await User.findOne({ email: formData.get("email") });
     if (!user) {
-      throw new Error("User not found");
+      return {
+        success: false,
+        message: "User not found",
+      };
     }
+
+    if (!user.password) {
+      return {
+        success: false,
+        message:
+          "It seems you signed up with Google. Please try google log in.",
+      };
+    }
+
+    const isValidPassword = await bcrypt.compare(
+      formData.get("password"),
+      user.password
+    );
+
+    if (!isValidPassword) {
+      return { success: false, message: "Invalid password" };
+    }
+
     const response = await signIn("credentials", {
       email: formData.get("email"),
       password: formData.get("password"),
@@ -34,13 +56,15 @@ export async function credentialLogin(formData) {
       throw new Error(response.error || "Login failed");
     }
   } catch (error) {
+    console.log("🚀 ~ error:", error);
     return {
       success: false,
-      message: error.message || "An error occurred during login",
+      message: "An error occurred during login",
     };
   }
 }
 
+// register a team member and create a user if not exists
 export async function teamMemberRegAndLogin(formData) {
   await dbConnect();
 
@@ -49,7 +73,7 @@ export async function teamMemberRegAndLogin(formData) {
   const name = formData.get("name");
 
   try {
-    // Find the token by email
+    // Find the member by email
     const team = await Team.findOne({
       "members.email": email,
       "members.tokenExpiration": { $gte: new Date() }, // Token is not expired
@@ -83,7 +107,29 @@ export async function teamMemberRegAndLogin(formData) {
     member.joined = true;
     member.token = null; // Clear the token
     member.tokenExpiration = null; // Clear expiration
+    member.name = name; // Update the name
     await team.save();
+
+    // Find team owner
+    const teamOwner = await User.findById(team.owner);
+
+    try {
+      await sendEmail({
+        to: "savvysoftware23@gmail.com",
+        subject: "Team Member Joined",
+        html: `
+          <h1>Team Member Joined</h1>
+          <p>${name} has joined (${teamOwner.name}) in capacitater.</p>
+        `,
+      });
+    } catch (emailError) {
+      console.error("Error sending email:", emailError);
+      return {
+        success: false,
+        status: 500,
+        message: "Failed to send the notification email.",
+      };
+    }
 
     // Log in the user
     const response = await signIn("credentials", {
@@ -106,4 +152,13 @@ export async function teamMemberRegAndLogin(formData) {
       message: error.message || "An error occurred during registration/login.",
     };
   }
+}
+
+export async function teamMemberGoogleLogin({ email }) {
+  await dbConnect();
+
+  signIn("google", {
+    // callbackUrl: "/dashboard", // Redirect after login
+    login_hint: email,
+  });
 }

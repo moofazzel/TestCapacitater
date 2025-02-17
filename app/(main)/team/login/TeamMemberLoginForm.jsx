@@ -5,8 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+// Import signIn from next-auth/react for OAuth
+import { signIn } from "next-auth/react";
 import logo from "../../../../public/assets/contact.png";
-import logo1 from "../../../../public/assets/logo2.png";
+import GoogleTeamMemberLoginButton from "./GoogleTeamMemberLoginButton";
 
 const TeamMemberLoginForm = () => {
   const searchParams = useSearchParams();
@@ -20,7 +22,7 @@ const TeamMemberLoginForm = () => {
     event.preventDefault();
 
     setLoading(true);
-    setErrorMessage(null); // Reset error message
+    setErrorMessage(null);
 
     const formData = new FormData(event.currentTarget);
 
@@ -41,7 +43,7 @@ const TeamMemberLoginForm = () => {
   };
 
   return (
-    <div className="container max-w-full xl:max-w-[1400px] 2xl:max-w-[1536px]  flex flex-col mt-28 overflow-hidden px-0">
+    <div className="container max-w-full xl:max-w-[1400px] 2xl:max-w-[1536px] flex flex-col mt-28 overflow-hidden px-0">
       <div className="flex flex-col mt-12 overflow-hidden shadow-dark-gray md:flex-row mb-36">
         <div className="p-10 md:p-32 md:w-1/2 bg-color10">
           <Image
@@ -50,14 +52,9 @@ const TeamMemberLoginForm = () => {
             layout="responsive"
           />
         </div>
-
         <div className="p-10 md:p-24 bg-color3 md:w-1/2">
           <div className="mb-8 text-center text-white">
-            <div className="w-40 mx-auto h-9">
-              <Image src={logo1} alt="capacitater" layout="responsive" />
-            </div>
-
-            <p className="mt-6 text-3xl font-semibold">Sign In as Member</p>
+            <p className="mt-6 text-3xl font-semibold">Create Account</p>
             <p className="mt-2 text-lg">
               See your growth and get consulting support!
             </p>
@@ -93,7 +90,7 @@ const TeamMemberLoginForm = () => {
               <input
                 id="name"
                 name="name"
-                type="name"
+                type="text"
                 placeholder="Name"
                 className="w-full px-5 py-2 placeholder-color02"
                 required
@@ -117,7 +114,7 @@ const TeamMemberLoginForm = () => {
               <button
                 type="submit"
                 className="flex items-center justify-center w-full px-8 py-4 text-lg font-semibold bg-white text-color3"
-                disabled={loading} // Optionally disable the button while loading
+                disabled={loading}
                 aria-busy={loading}
               >
                 {loading ? (
@@ -150,11 +147,14 @@ const TeamMemberLoginForm = () => {
               </button>
             </div>
           </form>
+
+          <GoogleTeamMemberLoginButton invitationEmail={email} />
+
           <p className="mt-5 text-lg text-center text-white">
             See{" "}
             <Link href="/privacy-policy">
               <span className="underline"> Privacy Policy </span>
-            </Link>{" "}
+            </Link>
           </p>
         </div>
       </div>

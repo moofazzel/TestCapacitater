@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { formatDate } from "../../(utils)";
+import CustomSearchInput from "../CustomSearchInput";
 import AllDealComments from "./AllDealComments";
 
 export default function AllocateResourceModal({
@@ -42,6 +43,30 @@ export default function AllocateResourceModal({
 
   const [newCommentState, setNewCommentState] = useState(false);
 
+  const [searchText, setSearchText] = useState("");
+  const [filteredResources, setFilteredResources] = useState(allResources);
+
+  useEffect(() => {
+    // Filter resources whenever searchText changes
+    if (searchText.trim() === "") {
+      setFilteredResources(allResources); // Reset if search is empty
+    } else {
+      setFilteredResources(
+        allResources.filter((resource) =>
+          resource.Resources.toLowerCase().includes(searchText.toLowerCase())
+        )
+      );
+    }
+  }, [searchText, allResources]); // Rerun this effect when searchText or allResources changes
+
+  const handleSearchChange = (value) => {
+    setSearchText(value);
+  };
+
+  const handleClearSearch = () => {
+    setSearchText(""); // Clear search text
+  };
+
   // const [isAllocateResourceModalOpen, setIsAllocateResourceModalOpen] =
   //   useState(false);
 
@@ -65,11 +90,11 @@ export default function AllocateResourceModal({
   const handleRefresh = async () => {
     //  show loading toast while refreshing
     const refreshToast = toast.loading("Refreshing...", {
-      duration: 6000,
+      duration: 4000,
     });
 
     // Simulate a delay for page refresh
-    await new Promise((resolve) => setTimeout(resolve, 6000)); // 6-second delay
+    await new Promise((resolve) => setTimeout(resolve, 4000)); // 6-second delay
 
     // Dismiss the loading toast and proceed with refreshing
     toast.dismiss(refreshToast); // Close the refreshing toast once done
@@ -171,7 +196,7 @@ export default function AllocateResourceModal({
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      console.log("🚀 ~ error:", error);
+      console.error("🚀 ~ error:", error);
       toast.error(error.message);
     }
   };
@@ -251,7 +276,7 @@ export default function AllocateResourceModal({
   return (
     <>
       <Button
-        className={` bg-transparent text-white font-semibold  max-h-full absolute left-0  min-w-full rounded-none z-[70]`}
+        className={`absolute left-0 min-w-full max-h-full font-semibold text-white bg-transparent rounded-none z-[70]`}
         onClick={handleModalOpen}
       >
         {buttonText}
@@ -272,23 +297,9 @@ export default function AllocateResourceModal({
       >
         <ModalContent>
           <form onSubmit={addResource}>
-            <ModalHeader></ModalHeader>
-            <ModalBody className="max-h-[35rem]">
-              {errorMessage && (
-                <div className="px-4 py-3 text-center text-black bg-red-100 border border-red-500 rounded-lg">
-                  <p className="font-bold">Warning</p>
-                  <p>{errorMessage}</p>
-                </div>
-              )}
-
-              {successMessage && (
-                <div className="px-4 py-3 text-center text-black bg-green-100 border border-green-500 rounded-lg">
-                  <p className="text-lg font-bold">Success</p>
-                  <p className="text-sm">{successMessage}</p>
-                </div>
-              )}
-
-              <div className="flex justify-center gap-3">
+            <ModalHeader>
+              {" "}
+              <div className="flex gap-3 justify-center pt-5 w-full">
                 <button
                   onClick={() => setTab("resources")}
                   className={` ${
@@ -311,6 +322,21 @@ export default function AllocateResourceModal({
                   Details
                 </button>
               </div>
+            </ModalHeader>
+            <ModalBody className="max-h-[35rem] bg-white">
+              {errorMessage && (
+                <div className="px-4 py-3 text-center text-black bg-red-100 rounded-lg border border-red-500">
+                  <p className="font-bold">Warning</p>
+                  <p>{errorMessage}</p>
+                </div>
+              )}
+
+              {successMessage && (
+                <div className="px-4 py-3 text-center text-black bg-green-100 rounded-lg border border-green-500">
+                  <p className="text-lg font-bold">Success</p>
+                  <p className="text-sm">{successMessage}</p>
+                </div>
+              )}
 
               {/* deal resources */}
               {tab === "resources" && (
@@ -319,11 +345,18 @@ export default function AllocateResourceModal({
                     className="pt-3 pb-4 text-lg text-color02"
                     title={projectName}
                   >
-                    Allocate to{" "}
-                    {/* <span className="underline truncate max-w-[15ch]">
-                  {projectName}
-                </span> */}
-                    {truncateText(projectName, 140)}
+                    Allocate to {truncateText(projectName, 140)}
+                  </div>
+                  {/* Custom Search Input */}
+                  <div className="w-full">
+                    <CustomSearchInput
+                      value={searchText}
+                      onChange={handleSearchChange}
+                      onClear={handleClearSearch}
+                      placeholder="Search by name..."
+                      className="w-full"
+                      customHeight="h-[45px]"
+                    />
                   </div>
                   {allResources.length === 0 ? (
                     <div className="p-5 font-bold text-center bg-gray-200 rounded-lg">
@@ -346,6 +379,14 @@ export default function AllocateResourceModal({
                             ? -1
                             : 1; // Move selected items to the top
                         })
+                        .filter((resource) => {
+                          // If searchText is empty, show all resources
+                          if (!searchText) return true;
+                          // Filter resources based on the search text (case insensitive)
+                          return resource.Resources.toLowerCase().includes(
+                            searchText.toLowerCase()
+                          );
+                        })
                         .map((resource, index) => {
                           const isSelected = selectedResources.hasOwnProperty(
                             resource.Resources
@@ -354,13 +395,13 @@ export default function AllocateResourceModal({
                           return (
                             <div
                               key={index}
-                              className={`flex items-center justify-between pt-1.5 px-2.5    ${
+                              className={`flex items-center justify-between pt-1.5 px-2.5 ${
                                 isSelected
                                   ? "bg-color10 border border-color5"
                                   : "bg-white border-color07 hover:border-color1 border"
-                              }  `}
+                              }`}
                             >
-                              <div className="flex items-center gap-3">
+                              <div className="flex gap-3 items-center">
                                 <Checkbox
                                   className="p-0 m-0"
                                   isSelected={isSelected}
@@ -392,12 +433,11 @@ export default function AllocateResourceModal({
                                 min="0"
                                 max="100"
                                 step="5"
-                                className={`w-16 h-8 px-2 border border-color07 
-                  ${
-                    !isSelected
-                      ? "bg-white cursor-not-allowed"
-                      : "bg-white !border-color5 !border"
-                  }`}
+                                className={`w-16 h-8 px-2 border border-color07 ${
+                                  !isSelected
+                                    ? "bg-white cursor-not-allowed"
+                                    : "bg-white !border-color5 !border"
+                                }`}
                               />
                             </div>
                           );
@@ -411,27 +451,55 @@ export default function AllocateResourceModal({
               {tab === "comments" && (
                 <div className="flex flex-col gap-4">
                   {/* Deal name */}
-                  <h3 className="text-xl font-semibold ">{deal["Project"]}</h3>
+                  <h3 className="text-xl font-semibold">{deal["Project"]}</h3>
                   {/* Deal ID */}
-                  <div className="text-base ">
+                  <div className="text-base">
                     <span className="text-color01">Deal ID:</span>{" "}
                     <span className="text-color03">{deal["Deal ID"]}</span>
                   </div>
 
                   {/* Deal stage */}
-                  <div className="text-base ">
+                  <div className="text-base">
                     <span className="text-color01">Deal Stage</span>{" "}
                     <span className="text-color03">{deal["Deal Stage"]}</span>
                   </div>
 
                   {/* Client */}
-                  <div className="text-base ">
+                  <div className="text-base">
                     <span className="text-color01">Client:</span>{" "}
                     <span className="text-color03">{deal["Client"]}</span>
                   </div>
+                  {/* Custom Fields (Dynamically Rendered) */}
+                  {Object.entries(deal).map(([key, value]) => {
+                    // Skip known standard fields
+                    if (
+                      [
+                        "id",
+                        "Deal ID",
+                        "Client",
+                        "Project",
+                        "Deal Stage",
+                        "Start Date",
+                        "End Date",
+                        "Deal Owner",
+                        "dealOwnerColumnName",
+                        "resources",
+                        "row",
+                      ].includes(key)
+                    ) {
+                      return null;
+                    }
+
+                    return (
+                      <div key={key} className="text-base">
+                        <span className="text-color01">{key}:</span>{" "}
+                        <span className="text-color03">{value || "N/A"}</span>
+                      </div>
+                    );
+                  })}
 
                   {/* Deal dates */}
-                  <div className="flex items-center gap-2 px-5 py-2 text-sm bg-white border border-color02 max-w-fit">
+                  <div className="flex gap-2 items-center px-5 py-2 text-sm bg-white border border-color02 max-w-fit">
                     <span className="text-color02">
                       {formatDate(deal["Start Date"])}
                     </span>
@@ -457,8 +525,8 @@ export default function AllocateResourceModal({
                   </div>
 
                   <div className="mt-1">
-                    <div className="flex justify-between gap-3">
-                      <div className="flex items-center gap-3">
+                    <div className="flex gap-3 justify-between">
+                      <div className="flex gap-3 items-center">
                         <svg
                           width="24"
                           height="24"
@@ -503,7 +571,7 @@ export default function AllocateResourceModal({
                       onChange={(e) => setComment(e.target.value)}
                       rows="2"
                       maxLength={1000}
-                      className="w-full p-2 mt-2 border rounded-none bg-color10 border-color05 focus:outline-color5 focus:ring-0 focus:rounded-none"
+                      className="p-2 mt-2 w-full rounded-none border bg-color10 border-color05 focus:outline-color5 focus:ring-0 focus:rounded-none"
                     ></textarea>
 
                     {comment.length === 1000 && (
@@ -517,13 +585,15 @@ export default function AllocateResourceModal({
                     <AllDealComments
                       dealId={dealId}
                       newCommentState={newCommentState}
+                      setNewCommentState={setNewCommentState}
+                      isCommentOption={true}
                     />
                   }
                 </div>
               )}
             </ModalBody>
 
-            <ModalFooter>
+            <ModalFooter className="bg-white">
               <Button
                 color="danger"
                 variant="solid"

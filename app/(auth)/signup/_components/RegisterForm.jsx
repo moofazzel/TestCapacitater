@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import logo from "../../../../public/assets/contact.png";
-import logo1 from "../../../../public/assets/logo2.png";
 
 const RegisterForm = () => {
   const router = useRouter();
@@ -76,14 +75,6 @@ const RegisterForm = () => {
 
         <div className="p-10 md:p-24 bg-color3 md:w-1/2">
           <div className="mb-8 text-center text-white">
-            <div className="w-40 mx-auto h-9">
-              <Image
-                src={logo1}
-                alt="Capacitater company logo"
-                layout="responsive"
-              />
-            </div>
-
             <p className="mt-6 text-3xl font-semibold">Create Account</p>
             <p className="mt-2 text-lg">
               See your growth and get consulting support!
@@ -173,14 +164,14 @@ const RegisterForm = () => {
                     Loading
                   </>
                 ) : (
-                  "Create Account"
+                  "Sign Up"
                 )}
               </button>
             </div>
             <p className="mt-5 text-lg text-center text-white">
               Already a Member?
               <Link href="/login">
-                <span className="underline"> Sign In</span>
+                <span className="underline"> Login In</span>
               </Link>
             </p>
           </form>

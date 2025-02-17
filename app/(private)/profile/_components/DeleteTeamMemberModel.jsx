@@ -63,7 +63,8 @@ export default function DeleteTeamMemberModel({ memberEmail, setTeamMembers }) {
     <>
       <Button
         onClick={handleModalOpen}
-        className="min-w-0 p-0 m-0 text-lg bg-transparent text-danger"
+        radius="none"
+        className="min-w-0 p-0 m-0 bg-transparent text-danger"
       >
         <DeleteIcon />
       </Button>

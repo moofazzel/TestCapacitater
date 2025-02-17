@@ -1,13 +1,17 @@
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { addOrUpdateCategoryColor } from "@/actions/categoryColor";
+import {
+  addOrUpdateCategoryColor,
+  deleteCategoryColor,
+} from "@/actions/categoryColor";
 import { useCategoryColorKey } from "@/context/CategoryColorKeyContext";
 import colorPickerArrowShape from "@/public/colorPickerArrowShape.svg";
 import { Select, SelectItem } from "@nextui-org/react";
 import { debounce } from "lodash";
 import { CirclePicker, SketchPicker } from "react-color";
 import toast from "react-hot-toast";
+import { BsTrash } from "react-icons/bs";
 
 export default function CustomColorPickerDropdown({ allDealStages }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,26 +27,50 @@ export default function CustomColorPickerDropdown({ allDealStages }) {
   const [selectedValue, setSelectedValue] = useState(new Set([]));
   const selectedCategories = categoryColors.map((item) => item?.name);
   const [loading, setLoading] = useState(false);
+  const [dropdownLoading, setDropdownLoading] = useState(false); // For showing skeleton
 
-  const handleAddCategoryColor = async (selectedKey, selectedColor) => {
-    setLoading(true);
-    setNewCategoryUpdate(false);
-    try {
-      await addOrUpdateCategoryColor(selectedKey, selectedColor);
-      toast.success("Category color added successfully.");
-      setLoading(false);
-      setIsOpen(false);
-      setShowAdvancedPicker(false);
-      setNewCategoryUpdate(true);
-      setSelectedValue(new Set([]));
-      setColor("#04BC04"); // Reset to default color
-      setPendingColor(null); // Clear pending color
-    } catch (error) {
-      console.error("Error adding category color:", error);
-      toast.error("Error adding category color.");
-      setLoading(false);
-    }
-  };
+  const handleAddOrUpdateCategoryColor = useCallback(
+    async (selectedKey, selectedColor) => {
+      setLoading(true);
+      setDropdownLoading(true);
+      try {
+        const existingEntry = categoryColors.find(
+          (c) => c.name === selectedKey
+        );
+        const categoryId = existingEntry?._id; // Get the ID for updates
+
+        const response = await addOrUpdateCategoryColor(
+          selectedKey,
+          selectedColor,
+          categoryId
+        );
+
+        if (!response || !response.success) {
+          throw new Error(response?.message || "Unknown error occurred");
+        }
+
+        toast.success(
+          categoryId
+            ? "Category color updated successfully."
+            : "Category color added successfully."
+        );
+
+        setLoading(false);
+        setDropdownLoading(false);
+        setIsOpen(false);
+        setShowAdvancedPicker(false);
+        setSelectedValue(new Set([]));
+        setColor("#04BC04"); // Reset color
+        setPendingColor(null);
+        setNewCategoryUpdate((prev) => !prev);
+      } catch (error) {
+        console.error("Error updating category color:", error);
+        toast.error(error.message || "Error updating category color.");
+        setLoading(false);
+      }
+    },
+    [setNewCategoryUpdate, categoryColors]
+  );
 
   // Toggle dropdown visibility
   const toggleDropdown = () => {
@@ -68,37 +96,69 @@ export default function CustomColorPickerDropdown({ allDealStages }) {
     };
   }, []);
 
+  const handleAddCategoryColorRef = useRef(handleAddOrUpdateCategoryColor);
+
+  useEffect(() => {
+    handleAddCategoryColorRef.current = handleAddOrUpdateCategoryColor;
+  }, [handleAddOrUpdateCategoryColor]);
+
+  const debouncedHandleAddCategoryColorRef = useRef();
+
+  useEffect(() => {
+    debouncedHandleAddCategoryColorRef.current = debounce(
+      (selectedKey, selectedColor, categoryId) => {
+        if (handleAddOrUpdateCategoryColor) {
+          handleAddOrUpdateCategoryColor(
+            selectedKey,
+            selectedColor,
+            categoryId
+          );
+        }
+      },
+      500,
+      { leading: false, trailing: true }
+    );
+  }, [handleAddOrUpdateCategoryColor]);
+
+  useEffect(() => {
+    if (pendingColor && selectedValue.size > 0) {
+      const selectedKey = Array.from(selectedValue)[0];
+      if (debouncedHandleAddCategoryColorRef.current) {
+        debouncedHandleAddCategoryColorRef.current(selectedKey, pendingColor);
+      }
+      setPendingColor(null); // Clear pending color after applying
+    }
+  }, [pendingColor, selectedValue]);
+
   const handleColorChange = (colorResult) => {
     if (isCooldown) return;
 
     setColor(colorResult.hex); // Update the UI immediately
+
     if (colorResult.hex === "custom") {
-      toggleAdvancedPicker();
-    } else if (selectedValue.size > 0) {
+      toggleAdvancedPicker(); // Open the advanced color picker
+      return;
+    }
+
+    if (selectedValue.size > 0) {
       const selectedKey = Array.from(selectedValue)[0];
-      debouncedHandleAddCategoryColor(selectedKey, colorResult.hex); // Use debounced API call
-      activateCooldown(); // Prevent spamming with rapid clicks
+      const existingEntry = categoryColors.find((c) => c.name === selectedKey);
+      const categoryId = existingEntry?._id; // Get the ID if exists
+
+      if (debouncedHandleAddCategoryColorRef.current) {
+        debouncedHandleAddCategoryColorRef.current(
+          selectedKey,
+          colorResult.hex,
+          categoryId
+        );
+      }
+
+      activateCooldown(); // Prevent spamming
     } else {
-      setPendingColor(colorResult.hex);
+      setPendingColor(colorResult.hex); // Save pending color if no stage is selected
       toast("Please select a category to apply the color.");
     }
   };
-
-  const debouncedHandleAddCategoryColor = debounce(
-    (selectedKey, selectedColor) => {
-      handleAddCategoryColor(selectedKey, selectedColor);
-    },
-    500, // Delay in milliseconds
-    { leading: false, trailing: true } // Trigger only after user stops interacting
-  );
-
-  useEffect(() => {
-    if (pendingColor && selectedValue.size > 0) {
-      // Trigger API call when both color and stage are selected
-      const selectedKey = Array.from(selectedValue)[0];
-      debouncedHandleAddCategoryColor(selectedKey, pendingColor);
-    }
-  }, [pendingColor, selectedValue]);
 
   const activateCooldown = () => {
     setIsCooldown(true); // Enable cooldown
@@ -118,6 +178,11 @@ export default function CustomColorPickerDropdown({ allDealStages }) {
       setHoveredColorName("");
     }
   };
+
+  const selectedStage = Array.from(selectedValue)[0] || null;
+  const existingEntry = categoryColors.find((c) => c.name === selectedStage);
+  const existingColor = existingEntry?.bgColor;
+  const existingId = existingEntry?._id;
 
   // Color palette with names
   const colorPalette = [
@@ -139,160 +204,210 @@ export default function CustomColorPickerDropdown({ allDealStages }) {
     { name: "Custom", hex: "custom" },
   ];
 
+  const getColor = (dealStage, border = false) => {
+    const colorKey = categoryColors.find(
+      (item) => item.name.toLowerCase() === dealStage.toLowerCase()
+    );
+
+    let baseColor = colorKey?.bgColor || "#d8d7dc";
+
+    // If a border is required, adjust the color
+    if (border) {
+      baseColor = darken(0.2, baseColor); // Darkens the color by 20%
+    }
+
+    return baseColor;
+  };
+  const handleDeleteCategoryColor = async (categoryId) => {
+    setLoading(true);
+    setDropdownLoading(true);
+    try {
+      await deleteCategoryColor(categoryId);
+      toast.success("Category color deleted successfully.");
+      setNewCategoryUpdate((prev) => !prev);
+      setSelectedValue(new Set([]));
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error deleting category color:", error);
+      toast.error("Error deleting category color.");
+    } finally {
+      setLoading(false);
+      setDropdownLoading(false);
+    }
+  };
+
   return (
     <div className="relative inline-block" ref={dropdownRef}>
       {/* Dropdown Trigger */}
       <button
         onClick={toggleDropdown}
-        className="flex items-center justify-center w-[40px] h-[40px] bg-[#E6F7E5]   hover:shadow-md transition-shadow"
+        className="flex items-center justify-center w-[40px] h-[40px]   hover:shadow-md transition-shadow"
       >
         <svg
+          className="transition-colors duration-200 stroke-black fill-white group-hover:fill-white group-hover:stroke-white"
           xmlns="http://www.w3.org/2000/svg"
-          width="29"
-          height="30"
-          viewBox="0 0 29 30"
+          width="21"
+          height="20"
+          viewBox="0 0 21 20"
           fill="none"
         >
-          <rect
-            x="0.4"
-            y="0.4"
-            width="28.2"
-            height="29.2"
-            fill="#E6F7E5"
-            stroke="#04BC04"
-            strokeWidth="0.8"
-          />
           <path
-            d="M23.727 16.3636H15.8179V24.5454H13.1816V16.3636H5.27246V13.6363H13.1816V5.45453H15.8179V13.6363H23.727V16.3636Z"
-            fill="#04BC04"
+            d="M19.5 9.787H7.145M2.784 9.787H1M2.784 9.787C2.784 9.20883 3.01368 8.65434 3.42251 8.24551C3.83134 7.83668 4.38583 7.607 4.964 7.607C5.54217 7.607 6.09666 7.83668 6.50549 8.24551C6.91432 8.65434 7.144 9.20883 7.144 9.787C7.144 10.3652 6.91432 10.9197 6.50549 11.3285C6.09666 11.7373 5.54217 11.967 4.964 11.967C4.38583 11.967 3.83134 11.7373 3.42251 11.3285C3.01368 10.9197 2.784 10.3652 2.784 9.787ZM19.5 16.394H13.752M13.752 16.394C13.752 16.9723 13.5218 17.5274 13.1128 17.9363C12.7039 18.3453 12.1493 18.575 11.571 18.575C10.9928 18.575 10.4383 18.3443 10.0295 17.9355C9.62068 17.5267 9.391 16.9722 9.391 16.394M13.752 16.394C13.752 15.8157 13.5218 15.2616 13.1128 14.8527C12.7039 14.4437 12.1493 14.214 11.571 14.214C10.9928 14.214 10.4383 14.4437 10.0295 14.8525C9.62068 15.2613 9.391 15.8158 9.391 16.394M9.391 16.394H1M19.5 3.18H16.395M12.034 3.18H1M12.034 3.18C12.034 2.60183 12.2637 2.04734 12.6725 1.63851C13.0813 1.22968 13.6358 1 14.214 1C14.5003 1 14.7838 1.05639 15.0483 1.16594C15.3127 1.2755 15.5531 1.43608 15.7555 1.63851C15.9579 1.84094 16.1185 2.08126 16.2281 2.34575C16.3376 2.61024 16.394 2.89372 16.394 3.18C16.394 3.46628 16.3376 3.74976 16.2281 4.01425C16.1185 4.27874 15.9579 4.51906 15.7555 4.72149C15.5531 4.92392 15.3127 5.0845 15.0483 5.19406C14.7838 5.30361 14.5003 5.36 14.214 5.36C13.6358 5.36 13.0813 5.13032 12.6725 4.72149C12.2637 4.31266 12.034 3.75817 12.034 3.18Z"
+            strokeWidth="1.5"
+            stroke-miterlimit="10"
+            stroke-linecap="round"
           />
         </svg>
       </button>
       {isOpen && (
         <div className="w-[300px] h-[590px] absolute right-0 top-0 z-[60] mt-2">
           <div className="relative w-full h-full">
-            <Image
-              className="object-cover w-full h-full max-h-[270px]"
-              src={colorPickerArrowShape}
-              alt=""
-            />
+            {!dropdownLoading && (
+              <Image
+                className="object-cover w-full h-full max-h-[270px]"
+                src={colorPickerArrowShape}
+                alt=""
+              />
+            )}
 
-            <div className="absolute top-[60px] left-[30px]">
-              <div>
-                <p className="block mb-2 text-sm font-medium text-color03">
-                  Category Name
-                </p>
-                {/* Deal Stages */}
-                <Select
-                  radius="none"
-                  label="Select a Stage"
-                  className="w-full !bg-white"
-                  selectedKeys={selectedValue}
-                  onSelectionChange={setSelectedValue}
-                  disabledKeys={selectedCategories}
-                  scrollShadowProps={{
-                    isEnabled: false,
-                  }}
-                >
-                  {allDealStages.map((dealStage) => (
-                    <SelectItem key={dealStage}>{dealStage}</SelectItem>
-                  ))}
-                </Select>
+            {dropdownLoading ? (
+              <div className="absolute top-[60px] left-[20px] w-[300px] p-4 bg-white shadow-md rounded-md animate-pulse">
+                <div className="space-y-4">
+                  <div className="w-3/4 h-6 bg-gray-300 rounded"></div>
+                  <div className="w-1/2 h-6 bg-gray-300 rounded"></div>
+                  <div className="w-5/6 h-6 bg-gray-300 rounded"></div>
+                </div>
               </div>
-              <div className="mb-4 text-color03">
-                <label
-                  htmlFor="categoryColor"
-                  className="block mt-2 mb-2 text-sm text-color03"
-                >
-                  Category Color
-                </label>
+            ) : (
+              <div className="absolute top-[60px] left-[30px]">
+                <div>
+                  <p className="block mb-2 text-sm font-medium text-color03">
+                    Category Name
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      radius="none"
+                      label="Select a Stage"
+                      className="w-full bg-white"
+                      selectedKeys={selectedValue}
+                      onSelectionChange={setSelectedValue}
+                      scrollShadowProps={{ isEnabled: false }}
+                    >
+                      {allDealStages.map((dealStage) => (
+                        <SelectItem
+                          key={dealStage}
+                          style={{ backgroundColor: getColor(dealStage) }}
+                        >
+                          {dealStage}
+                        </SelectItem>
+                      ))}
+                    </Select>
 
-                {/* Custom Circle Picker with Multicolor Swatch */}
-                <div
-                  className={`relative ${
-                    isCooldown ? "pointer-events-none cursor-not-allowed" : ""
-                  }`}
-                >
-                  <CirclePicker
-                    color={color}
-                    onChangeComplete={handleColorChange}
-                    onSwatchHover={(color) => handleColorHover(color.hex)}
-                    circleSize={24}
-                    circleSpacing={6}
-                    colors={colorPalette.map((c) => c.hex)}
-                  />
-                  {/* Custom Multicolor Swatch Overlay */}
+                    {/* Show delete button if the stage already has a color */}
+                    {existingColor && (
+                      <button
+                        className="p-2 text-white transition bg-red-500 rounded-full hover:bg-red-600"
+                        onClick={() => handleDeleteCategoryColor(existingId)}
+                      >
+                        <BsTrash size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="mb-4 text-color03">
+                  <label
+                    htmlFor="categoryColor"
+                    className="block mt-2 mb-2 text-sm text-color03"
+                  >
+                    Category Color
+                  </label>
+                  {/* Custom Circle Picker with Multicolor Swatch */}
                   <div
-                    className="absolute w-[26px] h-[26px] border-2 border-white rounded-full cursor-pointer bottom-[5px] right-[11px]"
-                    style={{
-                      background: `conic-gradient(red, yellow, green, cyan, blue, magenta, red)`,
-                    }}
-                    onClick={toggleAdvancedPicker}
-                    onMouseEnter={() => setHoveredColorName("Custom Colors")}
-                    onMouseLeave={() => setHoveredColorName("")}
-                  ></div>
-                  {/* Hovered Color Tooltip */}
-                  {hoveredColorName && (
-                    <div className="absolute top-[-30px] left-0 bg-gray-700 text-white px-2 py-1 rounded-md text-xs shadow">
-                      {hoveredColorName}
+                    className={`relative ${
+                      isCooldown ? "pointer-events-none cursor-not-allowed" : ""
+                    }`}
+                  >
+                    <CirclePicker
+                      color={color}
+                      onChangeComplete={handleColorChange}
+                      onSwatchHover={(color) => handleColorHover(color.hex)}
+                      circleSize={24}
+                      circleSpacing={6}
+                      colors={colorPalette.map((c) => c.hex)}
+                    />
+                    {/* Custom Multicolor Swatch Overlay */}
+                    <div
+                      className="absolute w-[26px] h-[26px] border-2 border-white rounded-full cursor-pointer bottom-[5px] right-[11px]"
+                      style={{
+                        background: `conic-gradient(red, yellow, green, cyan, blue, magenta, red)`,
+                      }}
+                      onClick={toggleAdvancedPicker}
+                      onMouseEnter={() => setHoveredColorName("Custom Colors")}
+                      onMouseLeave={() => setHoveredColorName("")}
+                    ></div>
+                    {/* Hovered Color Tooltip */}
+                    {hoveredColorName && (
+                      <div className="absolute top-[-30px] left-0 bg-gray-700 text-white px-2 py-1 rounded-md text-xs shadow">
+                        {hoveredColorName}
+                      </div>
+                    )}
+                  </div>
+
+                  {showAdvancedPicker && (
+                    <div className="relative z-10 flex flex-col items-center justify-center p-2 bg-white shadow">
+                      {/* SketchPicker for color selection */}
+                      <SketchPicker
+                        className="w-full"
+                        color={color}
+                        onChange={(colorResult) => {
+                          // Update the color preview without triggering the API
+                          setColor(colorResult.hex);
+                        }}
+                      />
+
+                      {/* Confirmation Button */}
+                      <div
+                        className={`flex items-center justify-center mt-2 bg-white border border-gray-300 rounded shadow ${
+                          selectedValue.size === 0 || loading
+                            ? "cursor-not-allowed opacity-50" // Disabled state
+                            : "cursor-pointer" // Active state
+                        }`}
+                        onClick={() => {
+                          if (selectedValue.size > 0 && !loading) {
+                            const selectedKey = Array.from(selectedValue)[0];
+                            setLoading(true); // Start loading state
+                            handleAddOrUpdateCategoryColor(selectedKey, color) // Trigger API
+                              .then(() => {})
+                              .catch((error) => {
+                                console.error("Error applying color:", error);
+                                toast.error("Failed to apply color.");
+                              })
+                              .finally(() => {
+                                setLoading(false); // Stop loading state
+                              });
+                          }
+                        }}
+                        style={{
+                          backgroundColor:
+                            selectedValue.size > 0 && !loading ? color : "#ddd", // Reflect color or gray out when disabled/loading
+                          width: "calc(100% - 8px)",
+                          height: "40px",
+                        }}
+                      >
+                        <span className="text-sm text-center text-gray-900">
+                          {loading
+                            ? "Applying..." // Loading text
+                            : selectedValue.size > 0
+                            ? "Select" // Enabled button text
+                            : "Select a Category First"}{" "}
+                          {/* Disabled button text */}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
-
-                {showAdvancedPicker && (
-                  <div className="relative z-10 flex flex-col items-center justify-center p-2 bg-white shadow">
-                    {/* SketchPicker for color selection */}
-                    <SketchPicker
-                      className="w-full"
-                      color={color}
-                      onChange={(colorResult) => {
-                        // Update the color preview without triggering the API
-                        setColor(colorResult.hex);
-                      }}
-                    />
-
-                    {/* Confirmation Button */}
-                    <div
-                      className={`flex items-center justify-center mt-2 bg-white border border-gray-300 rounded shadow ${
-                        selectedValue.size === 0 || loading
-                          ? "cursor-not-allowed opacity-50" // Disabled state
-                          : "cursor-pointer" // Active state
-                      }`}
-                      onClick={() => {
-                        if (selectedValue.size > 0 && !loading) {
-                          const selectedKey = Array.from(selectedValue)[0];
-                          setLoading(true); // Start loading state
-                          handleAddCategoryColor(selectedKey, color) // Trigger API
-                            .then(() => {})
-                            .catch((error) => {
-                              console.error("Error applying color:", error);
-                              toast.error("Failed to apply color.");
-                            })
-                            .finally(() => {
-                              setLoading(false); // Stop loading state
-                            });
-                        }
-                      }}
-                      style={{
-                        backgroundColor:
-                          selectedValue.size > 0 && !loading ? color : "#ddd", // Reflect color or gray out when disabled/loading
-                        width: "calc(100% - 8px)",
-                        height: "40px",
-                      }}
-                    >
-                      <span className="text-sm text-center text-gray-900">
-                        {loading
-                          ? "Applying..." // Loading text
-                          : selectedValue.size > 0
-                          ? "Select" // Enabled button text
-                          : "Select a Category First"}{" "}
-                        {/* Disabled button text */}
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}

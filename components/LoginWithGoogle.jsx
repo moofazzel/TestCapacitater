@@ -1,6 +1,7 @@
 import { signIn } from "next-auth/react";
+import Image from "next/image";
 
-const LoginWithGoogle = () => {
+const LoginWithGoogle = ({ email }) => {
   // handle google login
   const handleGoogleSignIn = () => {
     signIn("google");
@@ -14,8 +15,10 @@ const LoginWithGoogle = () => {
           type="button"
           className="flex gap-2 px-4 py-2 transition duration-150 bg-white border border-slate-200 dark:border-slate-700 text-color5 dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-slate-300 hover:shadow"
         >
-          <img
+          <Image
             className="w-6 h-6"
+            width={300}
+            height={300}
             src="https://www.svgrepo.com/show/475656/google-color.svg"
             loading="lazy"
             alt="google logo"

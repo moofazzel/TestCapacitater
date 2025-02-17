@@ -25,6 +25,35 @@ function DealPopoverContent({ deal }) {
         <span className="text-color03">{deal["Client"]}</span>
       </div>
 
+      {/* Custom Fields (Dynamically Rendered) */}
+      {Object.entries(deal).map(([key, value]) => {
+        // Skip known standard fields
+        if (
+          [
+            "id",
+            "Deal ID",
+            "Client",
+            "Project",
+            "Deal Stage",
+            "Start Date",
+            "End Date",
+            "Deal Owner",
+            "dealOwnerColumnName",
+            "resources",
+            "row",
+          ].includes(key)
+        ) {
+          return null;
+        }
+
+        return (
+          <div key={key} className="text-base">
+            <span className="text-color01">{key}:</span>{" "}
+            <span className="text-color03">{value || "N/A"}</span>
+          </div>
+        );
+      })}
+
       {/* Deal dates */}
       <div className="flex items-center gap-2 px-5 py-2 text-sm bg-white border border-color02 max-w-fit">
         <span className="text-color02">{formatDate(deal["Start Date"])}</span>

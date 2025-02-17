@@ -9,13 +9,13 @@ import {
   ModalFooter,
   ModalHeader,
 } from "@nextui-org/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { updateResourceToSheet } from "@/actions/resources/updateResourceToSheet";
 import CloseIcon from "@/components/icons/CloseIcon";
+import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { format } from "date-fns";
 
 export default function EditResourcesModal({ buttonText, resourceData }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -141,6 +141,20 @@ export default function EditResourcesModal({ buttonText, resourceData }) {
     }
   };
 
+  // Extract dynamic field names from resourcesData.
+  // We assume that any field that is not fixed should be treated as dynamic.
+  const dynamicFields = useMemo(() => {
+    const fixedKeys = [
+      "id",
+      "resource",
+      "totalMaxCapacity",
+      "dateHired",
+      "category",
+    ];
+    const allKeys = Object.keys(resourceData);
+    return allKeys.filter((key) => !fixedKeys.includes(key));
+  }, [resourceData]);
+
   const handleModalOpen = () => {
     setIsOpen(true);
     setErrorMessage(null);
@@ -217,6 +231,17 @@ export default function EditResourcesModal({ buttonText, resourceData }) {
                   className="text-color04 text-[16px] rounded-none p-5 border border-color05 focus:border-color5 focus:bg-color9  focus:ring-2 focus:ring-color5 focus:outline-none"
                   required
                 />
+
+                {/* Render dynamic fields (if any) */}
+                {dynamicFields.map((field) => (
+                  <input
+                    key={field}
+                    name={field}
+                    type="text"
+                    placeholder={`${field} :`}
+                    className="text-color04 text-[16px] rounded-none p-5 border border-color05 focus:border-color5 focus:bg-color9 focus:ring-2 focus:ring-color5 focus:outline-none"
+                  />
+                ))}
 
                 <input
                   defaultValue={resourceData?.totalMaxCapacity}

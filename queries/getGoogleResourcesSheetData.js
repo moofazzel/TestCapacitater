@@ -19,13 +19,11 @@ export async function getGoogleResourcesSheetData() {
     }
 
     // Authenticate with Google Sheets API
-    const client = await googleAuth(email); // Updated to use email for authentication
+    const client = await googleAuth(email);
     const gsapi = google.sheets({ version: "v4", auth: client });
 
-    // Ensure the second sheet matches "resources"
-    const sheetName = sheetNames.find(
-      (name) => name.toLowerCase() === "resources"
-    );
+    // Find the sheet named "resources" (case-insensitive)
+    const sheetName = sheetNames?.[1];
 
     if (!sheetName) {
       return {
@@ -35,12 +33,11 @@ export async function getGoogleResourcesSheetData() {
       };
     }
 
-    // Fetch data from the "resources" sheet
+    // Fetch all data from the "resources" sheet
     const opt = {
       spreadsheetId,
-      range: `${sheetName}`, // Fetch all data in the "resources" sheet
+      range: `${sheetName}`,
     };
-
     const response = await gsapi.spreadsheets.values.get(opt);
     const rows = response.data.values;
 
@@ -51,20 +48,45 @@ export async function getGoogleResourcesSheetData() {
     // Pull headers from the first row
     const headers = rows[0];
 
-    // Map the required fields to their indices
+    // Map the required fixed fields to their indices
     const resourceIndex = headers.indexOf("Resources");
     const totalMaxCapacityIndex = headers.indexOf("Total Max Capacity(%)");
     const dateHiredIndex = headers.indexOf("Date Hired");
     const categoryIndex = headers.indexOf("Category");
 
-    // Structure the data to keep only the required fields
-    const resources = rows.slice(1).map((row) => ({
-      id: uuidv4(), // Adding a unique UUID
-      resource: row[resourceIndex] || "",
-      totalMaxCapacity: row[totalMaxCapacityIndex] || "",
-      dateHired: row[dateHiredIndex] || "",
-      category: row[categoryIndex] || "",
-    }));
+    // Locate the first column that contains "Deal ID" (if not found, use the end of the row)
+    let firstDealIdIndex = headers.findIndex(
+      (header) => header && header.includes("Deal ID")
+    );
+    if (firstDealIdIndex === -1) {
+      firstDealIdIndex = headers.length;
+    }
+
+    // Determine custom column headers that lie between "Category" and the first "Deal ID" column.
+    const customColumnHeaders = headers.slice(
+      categoryIndex + 1,
+      firstDealIdIndex
+    );
+
+    // Structure the data, including both fixed fields and any custom fields.
+    const resources = rows.slice(1).map((row) => {
+      const resourceObj = {
+        id: uuidv4(), // Unique identifier for each resource
+        resource: row[resourceIndex] || "",
+        totalMaxCapacity: row[totalMaxCapacityIndex] || "",
+        dateHired: row[dateHiredIndex] || "",
+        category: row[categoryIndex] || "",
+      };
+
+      // Add each custom field into the resource object.
+      customColumnHeaders.forEach((colHeader, idx) => {
+        // Calculate the actual index in the row: starts right after "Category".
+        const colIndex = categoryIndex + 1 + idx;
+        resourceObj[colHeader] = row[colIndex] || "";
+      });
+
+      return resourceObj;
+    });
 
     return { status: 200, data: { resources } };
   } catch (error) {

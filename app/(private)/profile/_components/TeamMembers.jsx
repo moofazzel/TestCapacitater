@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import DeleteTeamMemberModel from "./DeleteTeamMemberModel";
 import TeamMembersSkeleton from "./TeamMembersSkeleton";
 
-const TeamMembers = ({ teamMembers, setTeamMembers }) => {
+const TeamMembers = ({ teamMembers, setTeamMembers, user }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -23,12 +23,13 @@ const TeamMembers = ({ teamMembers, setTeamMembers }) => {
     };
 
     fetchTeamMembers();
-  }, []);
+  }, [setTeamMembers]);
+
   return (
     <div>
-      <p className="flex items-center gap-1 my-4">
+      <p className="flex gap-1 items-center mb-4">
         Project Members
-        <span className="flex items-center justify-center text-sm text-center bg-gray-200 rounded-full size-5">
+        <span className="flex justify-center items-center text-sm text-center bg-gray-200 rounded-full size-5">
           {teamMembers.length || 0}
         </span>
       </p>
@@ -43,11 +44,27 @@ const TeamMembers = ({ teamMembers, setTeamMembers }) => {
       ) : (
         <>
           {teamMembers.length === 0 && <div> No team member found </div>}
+          {user?.ownerName && (
+            <div className="flex relative justify-between items-center mt-3 w-full">
+              <div className="flex gap-3 items-center">
+                <User
+                  avatarProps={{
+                    src: user?.ownerImage,
+                  }}
+                  description={user?.ownerEmail}
+                  name={user?.ownerName}
+                />
+              </div>
+            </div>
+          )}
           {teamMembers?.map((member, i) => {
             const memberAvatar = member?.image || null;
             return (
-              <div key={i} className="flex flex-col items-start gap-3">
-                <div className="relative flex items-center justify-between w-full gap-3">
+              <div
+                key={i}
+                className="flex relative justify-between items-center mt-3 w-full"
+              >
+                <div className="flex gap-3 items-center">
                   <User
                     avatarProps={{
                       src: memberAvatar,
@@ -56,17 +73,19 @@ const TeamMembers = ({ teamMembers, setTeamMembers }) => {
                     name={member?.name}
                   />
                   {!member.joined && (
-                    <span className="text-sm text-red-500">Not Joined</span>
+                    <small className="text-[10px] text-red-500">
+                      (Not Joined)
+                    </small>
                   )}
-                  <Tooltip color="danger" content="Delete Member">
-                    <div className="text-lg cursor-pointer text-danger active:opacity-50">
-                      <DeleteTeamMemberModel
-                        memberEmail={member.email}
-                        setTeamMembers={setTeamMembers}
-                      />
-                    </div>
-                  </Tooltip>
                 </div>
+                {!user?.isTeamMember && (
+                  <Tooltip color="danger" content="Delete Member">
+                    <DeleteTeamMemberModel
+                      memberEmail={member.email}
+                      setTeamMembers={setTeamMembers}
+                    />
+                  </Tooltip>
+                )}
               </div>
             );
           })}

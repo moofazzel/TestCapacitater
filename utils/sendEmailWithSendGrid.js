@@ -5,7 +5,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 export const sendEmail = async ({ to, subject, text, html }) => {
   const msg = {
     to, // recipient
-    from: "verify@cashquiver.com", // verified SendGrid sender
+    from: `${process.env.USER_NOTIFICATION_EMAIL}`, // verified SendGrid sender
     subject,
     text,
     html,

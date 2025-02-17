@@ -16,6 +16,8 @@ const DealsTimeline = forwardRef(
       allResources,
       resourcesData,
       onResourcesCategoryFilterChange,
+      onResourcesDynamicFilterChange,
+      showResources,
     },
     _
   ) => {
@@ -43,10 +45,13 @@ const DealsTimeline = forwardRef(
             dataByDealOwners={dataByDealOwners}
             dealHeight={50} // Fixed deal height
           >
-            <FilterResources
-              resourcesData={resourcesData}
-              onFilterChange={onResourcesCategoryFilterChange}
-            />
+            {showResources && (
+              <FilterResources
+                resourcesData={resourcesData}
+                onFilterChange={onResourcesCategoryFilterChange}
+                onDynamicFilterChange={onResourcesDynamicFilterChange}
+              />
+            )}
           </DealsTimeLineSideBar>
         </div>
 

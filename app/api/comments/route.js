@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import dbConnect from "@/lib/mongodb";
 import { Comment } from "@/models/comments-model";
+import { DealLog } from "@/models/DealLogSchema";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -21,14 +22,25 @@ export const GET = async (request) => {
       throw new Error("Unauthorized access");
     }
 
+    // Fetch comments for the deal
     const comments = await Comment.find({ dealId })
       .populate({
         path: "userId",
-        select: "name email",
+        select: "name email", // Include user name and email
       })
       .lean();
 
-    return NextResponse.json(comments);
+    // Fetch deal logs for the deal
+    const dealLogs = await DealLog.find({ dealId })
+    .lean();
+
+    // Combine comments and deal logs in the response
+    const response = {
+      comments,
+      dealLogs,
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ message: error.message }, { status: 500 });

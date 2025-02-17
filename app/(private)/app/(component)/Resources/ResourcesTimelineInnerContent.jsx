@@ -1,270 +1,271 @@
-import { getMondays, getMonthsRange } from "../../(utils)";
+import { getMonthsRange } from "../../(utils)";
 import { widthPerWeek } from "../Deals/AllDealItems";
-import OverPointerShapes from "./OverPointerShapes";
-import PointerShapes from "./PointerShapes";
+import CapacityIndicator from "./CapacityIndicator";
 
+/**
+ * Safely parse a date string in "day month year" format into a Date.
+ * If invalid or missing, returns a min or max sentinel date as fallback.
+ */
 function parseResourceDate(dateString) {
   if (dateString instanceof Date) {
-    return dateString; // Return the Date object directly
+    return dateString;
   }
-
   if (typeof dateString !== "string") {
-    return new Date(); // Return the current date as a fallback
+    // fallback => you could also do return new Date("9999-12-31");
+    return new Date("1900-01-01");
   }
 
-  const [day, month, year] = dateString.split(" ");
+  // Expecting something like "4 March 2024"
+  const parts = dateString.trim().split(" ");
+  if (parts.length === 3) {
+    const [dayStr, monthStr, yearStr] = parts;
+    const day = parseInt(dayStr, 10);
+    const year = parseInt(yearStr, 10);
+    // Convert "March" => month index
+    const tempDate = new Date(`${monthStr} 1, 2000`);
+    if (!isNaN(tempDate.getTime())) {
+      const monthIndex = tempDate.getMonth(); // 0-based
+      return new Date(year, monthIndex, day);
+    }
+  }
 
-  // Ensure that month is parsed correctly
-  const monthIndex = new Date(`${month} 1, 2000`).getMonth();
-  return new Date(parseInt(year, 10), monthIndex, parseInt(day, 10));
+  // If we got here, fallback to a sentinel
+  return new Date("1900-01-01");
 }
 
-function ResourcesTimelineInnerContent({ resourcesData }) {
+/**
+ * Align timeline start date to the nearest previous Monday.
+ * This helps calculate the day-based offset more precisely.
+ */
+function alignToPreviousMonday(date) {
+  const aligned = new Date(date);
+  const day = aligned.getDay();
+  if (day !== 1) {
+    // day=0 => Sunday, day=1 => Monday, day=2 => Tuesday, etc.
+    // Move 'aligned' back to Monday
+    // We use (day + 6) % 7 so Monday => 1 => shift by 0
+    aligned.setDate(aligned.getDate() - ((day + 6) % 7));
+  }
+  return aligned;
+}
+
+/**
+ * Given an actual start and end date,
+ * compute the 'startX' and 'width' on the timeline.
+ */
+function calculatePosition(startDate, endDate, timelineStartDate) {
+  // how many days from the timeline's (aligned) start date
+  const daysFromTimelineStart = Math.floor(
+    (startDate - timelineStartDate) / (1000 * 60 * 60 * 24)
+  );
+  const startX =
+    Math.floor(daysFromTimelineStart / 7) * widthPerWeek +
+    ((daysFromTimelineStart % 7) * widthPerWeek) / 7;
+
+  const daysEndFromTimelineStart = Math.floor(
+    (endDate - timelineStartDate) / (1000 * 60 * 60 * 24)
+  );
+  const endX =
+    Math.floor(daysEndFromTimelineStart / 7) * widthPerWeek +
+    ((daysEndFromTimelineStart % 7) * widthPerWeek) / 7 +
+    widthPerWeek / 7; // small extra to include that last day
+
+  const width = endX - startX;
+  // The user’s existing code subtracts 50px from startX for visual shift
+  return { startX: startX - 50, width };
+}
+
+/**
+ * Build sub-interval-based "periods" for a single resource:
+ *  - Breaks the timeline into slices determined by unique deal boundaries.
+ *  - Ensures there's an "available" chunk before the first deal starts.
+ *  - Sums capacity usage for intervals overlapping each sub-interval.
+ *  - Marks periods as "available", "working", or "overtask".
+ */
+function buildResourcePeriods(resourceData, monthsRange) {
+  // Overall timeline boundaries from your getMonthsRange call
+  const timelineStartDate = new Date(
+    monthsRange[0].year,
+    monthsRange[0].month,
+    1
+  );
+  const timelineEndDate = new Date(
+    monthsRange[monthsRange.length - 1].year,
+    monthsRange[monthsRange.length - 1].month + 1,
+    0
+  );
+
+  // Align the timeline start to Monday (like your code in calculatePosition)
+  const alignedTimelineStart = alignToPreviousMonday(timelineStartDate);
+
+  // If no deals exist, one big "available" chunk
+  const dealEntries = Object.values(resourceData.deals || {});
+  if (dealEntries.length === 0) {
+    const { startX, width } = calculatePosition(
+      alignedTimelineStart,
+      timelineEndDate,
+      alignedTimelineStart
+    );
+    return [
+      {
+        startX,
+        width,
+        type: "available",
+        usedCapacity: 0,
+        remainingCapacity: resourceData.totalMaxCapacity,
+        startDate: alignedTimelineStart,
+        endDate: timelineEndDate,
+      },
+    ];
+  }
+
+  // 1) Gather intervals from each deal
+  //    Clip deals to stay within [alignedTimelineStart, timelineEndDate].
+  const intervals = [];
+  dealEntries.forEach((deal) => {
+    const s = parseResourceDate(deal.startDate);
+    const e = parseResourceDate(deal.endDate);
+
+    // Clip to timeline
+    const start = s < alignedTimelineStart ? alignedTimelineStart : s;
+    const end = e > timelineEndDate ? timelineEndDate : e;
+
+    if (start < end) {
+      intervals.push({
+        start,
+        end,
+        capacity: deal.dealCapacity || 0,
+      });
+    }
+  });
+
+  // If all deals are out of the timeline range, return one "available" chunk
+  if (intervals.length === 0) {
+    const { startX, width } = calculatePosition(
+      alignedTimelineStart,
+      timelineEndDate,
+      alignedTimelineStart
+    );
+    return [
+      {
+        startX,
+        width,
+        type: "available",
+        usedCapacity: 0,
+        remainingCapacity: resourceData.totalMaxCapacity,
+        startDate: alignedTimelineStart,
+        endDate: timelineEndDate,
+      },
+    ];
+  }
+
+  // 2) Insert a zero-capacity interval if there's a gap BEFORE the earliest deal
+  //    so we get an "available" slice before the first deal starts.
+  const earliestDealStart = intervals.reduce(
+    (earliest, iv) => (iv.start < earliest ? iv.start : earliest),
+    timelineEndDate
+  );
+
+  // Optional: also consider the resource's hired date
+  const resourceHired = parseResourceDate(resourceData.dateHired);
+  // We take the later of (aligned timeline start) and (resource hired date)
+  // as the actual "resource timeline start".
+  const resourceTimelineStart =
+    resourceHired > alignedTimelineStart ? resourceHired : alignedTimelineStart;
+
+  if (earliestDealStart > resourceTimelineStart) {
+    // Add a zero-capacity interval from resourceTimelineStart -> earliestDealStart
+    intervals.push({
+      start: resourceTimelineStart,
+      end: earliestDealStart,
+      capacity: 0, // "available"
+    });
+  }
+
+  // 3) Collect unique boundaries from all intervals
+  const boundaries = new Set();
+  intervals.forEach((iv) => {
+    boundaries.add(iv.start.getTime());
+    boundaries.add(iv.end.getTime());
+  });
+  const sortedBoundaries = Array.from(boundaries).sort((a, b) => a - b);
+
+  // 4) For each adjacent pair of boundaries, sum up intervals that cover that entire sub-interval
+  const periods = [];
+  for (let i = 0; i < sortedBoundaries.length - 1; i++) {
+    const subStart = new Date(sortedBoundaries[i]);
+    const subEnd = new Date(sortedBoundaries[i + 1]);
+
+    // Find intervals that fully overlap [subStart, subEnd)
+    const active = intervals.filter(
+      (iv) => iv.start <= subStart && iv.end >= subEnd
+    );
+    const totalUsed = active.reduce((acc, iv) => acc + iv.capacity, 0);
+    const overtask = Math.max(0, totalUsed - resourceData.totalMaxCapacity);
+
+    let periodType = "working";
+    if (totalUsed === 0) {
+      periodType = "available";
+    } else if (overtask > 0) {
+      periodType = "overtask";
+    }
+
+    const { startX, width } = calculatePosition(
+      subStart,
+      subEnd,
+      alignedTimelineStart
+    );
+
+    periods.push({
+      startX,
+      width,
+      type: periodType,
+      usedCapacity: totalUsed,
+      remainingCapacity: Math.max(resourceData.totalMaxCapacity - totalUsed, 0),
+      startDate: subStart,
+      endDate: subEnd,
+    });
+  }
+
+  return periods;
+}
+
+function ResourcesTimelineInnerContent({
+  resourcesData,
+  isHoveredRow,
+  setIsHoveredRow,
+}) {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
-  // get before 5 months and after 8 months from the current date
-  const monthsRange = getMonthsRange(currentMonth, currentYear, 5, 8);
+  // Get months from 5 months before now to 8 months after
+  const monthsRange = getMonthsRange(currentMonth, currentYear, 3, 8);
 
-  const calculatePosition = (startDate, endDate, monthsRange) => {
-    const startMonthIndex = monthsRange.findIndex(
-      ({ month, year }) =>
-        month === startDate.getMonth() && year === startDate.getFullYear()
-    );
-    const endMonthIndex = monthsRange.findIndex(
-      ({ month, year }) =>
-        month === endDate.getMonth() && year === endDate.getFullYear()
-    );
-
-    if (startMonthIndex === -1 || endMonthIndex === -1) {
-      return { startX: 0, width: 0 };
-    }
-
-    const startDayIndex = Math.floor(
-      (startDate - new Date(startDate.getFullYear(), startDate.getMonth(), 1)) /
-        (1000 * 60 * 60 * 24 * 7)
-    );
-    const endDayIndex = Math.floor(
-      (endDate - new Date(endDate.getFullYear(), endDate.getMonth(), 1)) /
-        (1000 * 60 * 60 * 24 * 7)
-    );
-
-    const startX =
-      monthsRange
-        .slice(0, startMonthIndex)
-        .reduce(
-          (acc, { month, year }) => acc + getMondays(year, month).length,
-          0
-        ) *
-        widthPerWeek +
-      startDayIndex * widthPerWeek;
-
-    const endX =
-      monthsRange
-        .slice(0, endMonthIndex)
-        .reduce(
-          (acc, { month, year }) => acc + getMondays(year, month).length,
-          0
-        ) *
-        widthPerWeek +
-      endDayIndex * widthPerWeek +
-      widthPerWeek; // Adding extra day to include the end date fully
-
-    return { startX, width: endX - startX };
-  };
-
-  function calculateResourcePosition(resourceData, monthsRange, widthPerWeek) {
-    const availablePeriods = [];
-    const overtaskedPeriods = [];
-    const workingPeriods = [];
-
-    const hiredDate = parseResourceDate(resourceData.dateHired);
-    const timelineStartDate = new Date(
-      monthsRange[0].year,
-      monthsRange[0].month,
-      1
-    ); // Start of the timeline
-    const sortedDeals = Object.values(resourceData.deals).sort(
-      (a, b) => parseResourceDate(a.startDate) - parseResourceDate(b.startDate)
-    );
-
-    let lastEndDate =
-      hiredDate < timelineStartDate ? timelineStartDate : hiredDate; // Ensure lastEndDate starts from the timeline if hired before the timeline
-    let currentCapacity = 0;
-
-    sortedDeals.forEach((deal) => {
-      const startDate = parseResourceDate(deal.startDate);
-      const endDate = parseResourceDate(deal.endDate);
-      const dealCapacity = deal.dealCapacity;
-
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        return; // Skip invalid dates
-      }
-
-      // Calculate the available period before this deal starts
-      if (startDate > lastEndDate) {
-        const { startX, width } = calculatePosition(
-          lastEndDate,
-          startDate,
-          monthsRange
-        );
-        availablePeriods.push({
-          startX,
-          width,
-          partial: false,
-          remainingCapacity: resourceData.totalMaxCapacity, // Full capacity available
-        });
-      }
-
-      // Update the current capacity with the current deal's capacity
-      currentCapacity += dealCapacity;
-      const remainingCapacityDuringDeal =
-        resourceData.totalMaxCapacity - currentCapacity;
-
-      // Add the current deal as a working period
-      const { startX: workStartX, width: workWidth } = calculatePosition(
-        startDate,
-        endDate,
-        monthsRange
-      );
-      workingPeriods.push({ startX: workStartX, width: workWidth });
-
-      // Handle partial availability during the current deal
-      if (remainingCapacityDuringDeal > 0) {
-        availablePeriods.push({
-          startX: workStartX,
-          width: workWidth,
-          partial: true,
-          remainingCapacity: remainingCapacityDuringDeal,
-        });
-      }
-
-      lastEndDate = endDate;
-    });
-
-    // Calculate any remaining available period after the last deal
-    const timelineEndDate = new Date(
-      monthsRange[monthsRange.length - 1].year,
-      monthsRange[monthsRange.length - 1].month + 1,
-      0
-    );
-    if (lastEndDate < timelineEndDate) {
-      const { startX, width } = calculatePosition(
-        lastEndDate,
-        timelineEndDate,
-        monthsRange
-      );
-      availablePeriods.push({
-        startX,
-        width,
-        partial: false,
-        remainingCapacity: resourceData.totalMaxCapacity, // Full capacity available
-      });
-    }
-
-    // Calculate overtasked periods
-    resourceData.overtaskPeriods.forEach((period) => {
-      const startDate = parseResourceDate(period.overtaskStartDate);
-      const endDate = parseResourceDate(period.overtaskEndDate);
-
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        return; // Skip invalid dates
-      }
-
-      const { startX, width } = calculatePosition(
-        startDate,
-        endDate,
-        monthsRange
-      );
-
-      overtaskedPeriods.push({
-        startX,
-        width,
-        overtaskedCapacity: period.overtaskedCapacity,
-      });
-    });
-
-    return { availablePeriods, overtaskedPeriods, workingPeriods };
-  }
   return (
-    <div className="relative flex flex-col gap-[87px] pt-10">
+    <div className="relative flex flex-col gap-[15px]">
       {Object.entries(resourcesData).map(([resourceName, resourceData], i) => {
-        const { availablePeriods, overtaskedPeriods } =
-          calculateResourcePosition(resourceData, monthsRange, widthPerWeek);
+        const periods = buildResourcePeriods(resourceData, monthsRange);
+
         return (
           <div
             key={i}
-            className="relative px-5 py-4 bg-white border border-color5 flex flex-col justify-center h-[76px] w-[3050px]"
+            className={`transition-all duration-300 ease-in-out relative px-5 bg-white border border-color5 flex flex-col justify-center h-[40px] w-[3050px] cursor-default ${
+              isHoveredRow === resourceName ? "!bg-color9" : ""
+            }`}
+            onMouseEnter={() => setIsHoveredRow(resourceName)}
+            onMouseLeave={() => setIsHoveredRow(null)}
           >
-            {/* Render available periods */}
-            {availablePeriods.length > 0 &&
-              availablePeriods.map(
-                ({ startX, width, remainingCapacity }, periodIndex) => {
-                  return (
-                    <div
-                      key={`available-${periodIndex}`}
-                      style={{
-                        position: "absolute",
-                        left: `${startX}px`,
-                        width: `${width}px`,
-                      }}
-                      className={`flex items-center justify-start my-2 text-[12px] relative `}
-                    >
-                      <div className="z-[45] bg-[#d2f2ff] border border-[#0199DB] py-1.5 px-2.5 relative">
-                        {/* pointer shapes */}
-                        <PointerShapes />
-                        <span className="font-normal text-black border border-[#0199DB] bg-[#dff6ff] px-1.5">
-                          {remainingCapacity}%
-                        </span>
-
-                        <span className="ml-2 font-medium capitalize text-color02">
-                          {resourceName}
-                        </span>
-                      </div>
-                      {/* available progress bar */}
-                      <div className="w-full h-[9px] bg-[#0199DB] absolute z-40"></div>
-                    </div>
-                  );
-                }
-              )}
-            {/* Render overtasked periods */}
-            {overtaskedPeriods.length > 0 &&
-              overtaskedPeriods.map(
-                ({ startX, width, overtaskedCapacity }, periodIndex) => {
-                  return (
-                    <div
-                      key={`overtasked-${periodIndex}`}
-                      style={{
-                        position: "absolute",
-                        left: `${startX + 30}px`,
-                        width: `${width - 50}px`,
-                      }}
-                      className="flex items-center justify-start my-2 text-[12px] font-semibold rounded-l-xl"
-                    >
-                      {overtaskedCapacity > 0 && (
-                        <>
-                          <div className="z-50 bg-[#FFD4D4] border border-[#FF0C0C] py-1.5 px-2.5 relative">
-                            {/* pointer shapes */}
-                            <OverPointerShapes />
-
-                            <span className="font-normal text-black border border-[#FF0C0C] bg-[#FFD4D4] px-1.5">
-                              {` ${overtaskedCapacity}%`}
-                            </span>
-
-                            <span className="ml-2 font-medium capitalize text-color02">
-                              {resourceName}
-                            </span>
-                          </div>
-
-                          {/* overtasked progress bar */}
-                          <div className="absolute w-full h-[9px] bg-[#FF0C0C] animate-line-grow z-40"></div>
-                        </>
-                      )}
-                    </div>
-                  );
-                }
-              )}
+            {/* Render each sub-interval as a colored bar */}
+            {periods.map(({ startX, width, usedCapacity }, periodIndex) => (
+              <CapacityIndicator
+                key={periodIndex}
+                startX={startX}
+                width={width}
+                usedCapacity={usedCapacity}
+                periodIndex={periodIndex}
+              />
+            ))}
           </div>
         );
       })}

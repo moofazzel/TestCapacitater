@@ -7,7 +7,7 @@ function ResourcesGrid({ totalResourcesLength, sidebarHeight }) {
   const currentYear = currentDate.getFullYear();
 
   // get before 5 months and after 8 months from the current date
-  const monthsRange = getMonthsRange(currentMonth, currentYear, 5, 8);
+  const monthsRange = getMonthsRange(currentMonth, currentYear, 3, 8);
   return (
     <div className="absolute top-0 left-0 flex w-max">
       {/* Calendar grid */}
